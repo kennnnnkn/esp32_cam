@@ -1,0 +1,12 @@
+{
+  "name": "security-cam-relay",
+  "version": "1.0.0",
+  "description": "WebSocket relay สำหรับกล้องวงจรปิด ESP32-CAM ผ่าน Render.com free tier",
+  "main": "relay_server.js",
+  "scripts": {
+    "start": "node relay_server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

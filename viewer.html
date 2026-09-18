@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>กล้องวงจรปิด — แผงควบคุม</title>
+<style>
+  :root{
+    --bg:#0a0a0a;
+    --panel:#141210;
+    --line:#2a2622;
+    --amber:#ffb300;
+    --amber-dim:#8a6100;
+    --red:#ff4433;
+    --green:#4caf50;
+    --text:#e8e2d5;
+    --text-dim:#8a8378;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    overscroll-behavior:none;}
+  .mono{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;}
+
+  .wrap{max-width:520px;margin:0 auto;padding:14px 14px 40px;}
+
+  header{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 14px;}
+  header h1{font-size:15px;font-weight:600;letter-spacing:.3px;margin:0;color:var(--text);}
+  header .sub{font-size:11px;color:var(--text-dim);margin-top:2px;}
+  .gear{background:none;border:1px solid var(--line);color:var(--text-dim);
+    width:34px;height:34px;border-radius:8px;font-size:16px;cursor:pointer;}
+
+  .status-row{display:flex;gap:10px;margin-bottom:10px;font-size:11px;}
+  .status{display:flex;align-items:center;gap:6px;padding:5px 9px;border:1px solid var(--line);
+    border-radius:20px;color:var(--text-dim);}
+  .dot{width:7px;height:7px;border-radius:50%;background:#4a453c;flex:none;}
+  .dot.ok{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .dot.bad{background:var(--red);box-shadow:0 0 6px var(--red);}
+
+  .frame{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;
+    background:#000;aspect-ratio:4/3;}
+  .frame img{width:100%;height:100%;object-fit:cover;display:block;}
+  .frame .placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    color:var(--text-dim);font-size:12px;text-align:center;padding:20px;}
+  .corner{position:absolute;width:16px;height:16px;border-color:var(--amber);opacity:.8;}
+  .corner.tl{top:8px;left:8px;border-top:2px solid;border-left:2px solid;}
+  .corner.tr{top:8px;right:8px;border-top:2px solid;border-right:2px solid;}
+  .corner.bl{bottom:8px;left:8px;border-bottom:2px solid;border-left:2px solid;}
+  .corner.br{bottom:8px;right:8px;border-bottom:2px solid;border-right:2px solid;}
+  .rec{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:5px;
+    font-size:10px;color:var(--red);background:rgba(0,0,0,.5);padding:3px 7px;border-radius:4px;}
+  .rec .b{width:6px;height:6px;border-radius:50%;background:var(--red);animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+  .clock{position:absolute;bottom:10px;right:10px;font-size:10px;color:var(--amber);
+    background:rgba(0,0,0,.5);padding:3px 7px;border-radius:4px;}
+
+  .toast{position:absolute;top:10px;right:10px;font-size:10px;background:rgba(0,0,0,.6);
+    color:var(--amber);padding:4px 8px;border-radius:4px;opacity:0;transition:opacity .3s;}
+  .toast.show{opacity:1;}
+
+  section{margin-top:16px;}
+  .label-row{display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:6px;}
+  .label-row b{color:var(--text);font-weight:600;}
+
+  input[type=range]{-webkit-appearance:none;width:100%;height:34px;background:transparent;}
+  input[type=range]::-webkit-slider-runnable-track{height:4px;background:var(--line);border-radius:2px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;margin-top:-10px;
+    border-radius:50%;background:var(--amber);border:2px solid #000;box-shadow:0 0 8px rgba(255,179,0,.5);}
+  input[type=range]::-moz-range-track{height:4px;background:var(--line);border-radius:2px;}
+  input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--amber);border:2px solid #000;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+  button.ctrl{background:var(--panel);border:1px solid var(--line);color:var(--text);
+    padding:14px 10px;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px;}
+  button.ctrl.active{border-color:var(--amber);color:var(--amber);background:#221c0c;}
+  button.ctrl:active{transform:scale(.97);}
+
+  .talk-btn{margin-top:12px;width:100%;padding:20px;border-radius:12px;border:1px solid var(--line);
+    background:var(--panel);color:var(--text);font-size:14px;font-weight:600;text-align:center;
+    user-select:none;touch-action:none;cursor:pointer;}
+  .talk-btn.live{background:#2a1200;border-color:var(--amber);color:var(--amber);
+    box-shadow:0 0 20px rgba(255,179,0,.15);}
+
+  dialog{border:none;border-radius:12px;background:var(--panel);color:var(--text);width:88%;max-width:400px;
+    padding:0;}
+  dialog::backdrop{background:rgba(0,0,0,.6);}
+  .dlg-inner{padding:18px;}
+  .dlg-inner h2{font-size:14px;margin:0 0 14px;}
+  .field{margin-bottom:10px;}
+  .field label{display:block;font-size:11px;color:var(--text-dim);margin-bottom:4px;}
+  .field input{width:100%;background:#0d0b09;border:1px solid var(--line);color:var(--text);
+    padding:9px 10px;border-radius:7px;font-size:13px;}
+  .dlg-btns{display:flex;gap:8px;margin-top:14px;}
+  .dlg-btns button{flex:1;padding:11px;border-radius:8px;border:1px solid var(--line);
+    background:#0d0b09;color:var(--text);font-size:13px;}
+  .dlg-btns button.primary{background:var(--amber);color:#000;border-color:var(--amber);font-weight:600;}
+  .hint{font-size:10px;color:var(--text-dim);margin-top:10px;line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>กล้องวงจรปิด</h1>
+      <div class="sub">แผงควบคุมฝั่งผู้ชม</div>
+    </div>
+    <button class="gear" onclick="settingsDlg.showModal()">⚙</button>
+  </header>
+
+  <div class="status-row">
+    <div class="status"><span id="dotCam" class="dot"></span><span id="camLabel">กล้อง: กำลังเชื่อมต่อ…</span></div>
+    <div class="status"><span id="dotMqtt" class="dot"></span><span id="mqttLabel">Servo: กำลังเชื่อมต่อ…</span></div>
+  </div>
+
+  <div class="frame" id="frame">
+    <div class="placeholder" id="placeholder">ยังไม่มีภาพ — ตรวจว่า ESP32-CAM เปิดอยู่และตั้งค่าใน ⚙ ถูกต้อง</div>
+    <img id="video" style="display:none">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    <div class="rec" id="recBadge" style="display:none"><span class="b"></span>LIVE</div>
+    <div class="clock" id="clock"></div>
+    <div class="toast" id="toast"></div>
+    <div id="audioUnlock" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      background:rgba(0,0,0,.55);cursor:pointer;font-size:12px;color:var(--amber);text-align:center;padding:20px;">
+      👆 แตะที่นี่เพื่อเปิดเสียงจากกล้อง<br><span style="color:var(--text-dim);font-size:10px;">(เบราว์เซอร์ต้องให้แตะจอก่อนถึงจะเล่นเสียงได้)</span>
+    </div>
+  </div>
+
+  <section>
+    <div class="label-row"><span>แพน (ซ้าย ⟷ ขวา)</span><b id="panVal">90°</b></div>
+    <input type="range" id="panSlider" min="0" max="180" value="90">
+  </section>
+
+  <section style="margin-top:6px;">
+    <div class="label-row"><span>ทิลท์ (ก้ม ⟷ เงย)</span><b id="tiltVal">90°</b></div>
+    <input type="range" id="tiltSlider" min="0" max="180" value="90">
+  </section>
+
+  <div class="grid2">
+    <button class="ctrl" id="flashBtn">💡 แฟลช</button>
+    <button class="ctrl" id="photoBtn">📷 ถ่ายภาพ</button>
+    <button class="ctrl" id="muteBtn">🔊 เสียงจากกล้อง</button>
+    <button class="ctrl" id="centerBtn">🎯 กึ่งกลาง</button>
+  </div>
+
+  <button class="talk-btn" id="talkBtn">🎙 กดค้างเพื่อพูด</button>
+
+  <p class="hint">ปล่อยปุ่ม "กดค้างเพื่อพูด" เพื่อกลับไปฟังเสียงจากกล้อง (ระบบเป็น push-to-talk สลับทิศทางเดียว ไม่ใช่พูดพร้อมกันสองทาง)</p>
+
+</div>
+
+<dialog id="settingsDlg">
+  <div class="dlg-inner">
+    <h2>ตั้งค่าการเชื่อมต่อ</h2>
+    <div class="field"><label>Render host (relay วิดีโอ)</label>
+      <input id="cfgRelayHost" placeholder="your-app-name.onrender.com"></div>
+    <div class="field"><label>Device token</label>
+      <input id="cfgToken" placeholder="รหัสลับเดียวกับใน esp32cam_camera.ino"></div>
+    <div class="field"><label>HiveMQ cluster URL</label>
+      <input id="cfgMqttHost" placeholder="xxxxxxxx.s1.eu.hivemq.cloud"></div>
+    <div class="field"><label>HiveMQ username</label>
+      <input id="cfgMqttUser" placeholder="hivemq_username"></div>
+    <div class="field"><label>HiveMQ password</label>
+      <input id="cfgMqttPass" type="password" placeholder="hivemq_password"></div>
+    <div class="field"><label>MQTT WebSocket port (ปกติ 8884 — แก้เฉพาะถ้า console บอกไว้ต่างจากนี้)</label>
+      <input id="cfgMqttPort" placeholder="8884"></div>
+    <div class="field"><label>MQTT WebSocket path (ปกติ /mqtt)</label>
+      <input id="cfgMqttPath" placeholder="/mqtt"></div>
+    <div class="dlg-btns">
+      <button onclick="settingsDlg.close()">ยกเลิก</button>
+      <button class="primary" onclick="saveSettings()">บันทึก &amp; เชื่อมต่อ</button>
+    </div>
+    <p class="hint">ค่าที่บันทึกจะเก็บไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น (localStorage) ไม่ได้ส่งไปที่ไหนนอกจากอุปกรณ์ของคุณเอง</p>
+  </div>
+</dialog>
+
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script>
+/* ===================== ค่าคอนฟิก (แก้ผ่านปุ่ม ⚙ ในแอพได้เลย ไม่ต้องแก้โค้ด) ===================== */
+let savedCfg = {};
+try { savedCfg = JSON.parse(localStorage.getItem('camViewerCfg') || '{}'); } catch(e){ savedCfg = {}; }
+const cfg = Object.assign({
+  relayHost: '',
+  token: '',
+  mqttHost: '',
+  mqttUser: '',
+  mqttPass: '',
+  mqttPort: '8884',
+  mqttPath: '/mqtt'
+}, savedCfg);
+
+// ตัด "wss://", "https://" และ "/" ท้ายสตริงออก เผื่อผู้ใช้เผลอวางมาทั้ง URL แทนที่จะเป็นแค่ host
+function cleanHost(v){
+  return String(v || '').trim()
+    .replace(/^wss?:\/\//i, '').replace(/^https?:\/\//i, '')
+    .replace(/\/+$/,'');
+}
+
+const TOPIC_PAN  = 'securitycam/servo/pan';
+const TOPIC_TILT = 'securitycam/servo/tilt';
+
+/* ===================== DOM ===================== */
+const $ = id => document.getElementById(id);
+const videoEl = $('video'), placeholder = $('placeholder'), recBadge = $('recBadge');
+const dotCam = $('dotCam'), camLabel = $('camLabel');
+const dotMqtt = $('dotMqtt'), mqttLabel = $('mqttLabel');
+const panSlider = $('panSlider'), tiltSlider = $('tiltSlider');
+const panVal = $('panVal'), tiltVal = $('tiltVal');
+const flashBtn = $('flashBtn'), photoBtn = $('photoBtn'), muteBtn = $('muteBtn'), centerBtn = $('centerBtn');
+const talkBtn = $('talkBtn'), toast = $('toast');
+const settingsDlg = $('settingsDlg');
+const audioUnlockEl = $('audioUnlock');
+let audioUnlocked = false;
+audioUnlockEl.addEventListener('click', () => {
+  ensureAudioCtx();
+  audioUnlocked = true;
+  audioUnlockEl.style.display = 'none';
+});
+document.body.addEventListener('pointerdown', () => {
+  if(!audioUnlocked){ ensureAudioCtx(); audioUnlocked = true; audioUnlockEl.style.display = 'none'; }
+}, {once:true});
+
+$('cfgRelayHost').value = cfg.relayHost;
+$('cfgToken').value = cfg.token;
+$('cfgMqttHost').value = cfg.mqttHost;
+$('cfgMqttUser').value = cfg.mqttUser;
+$('cfgMqttPass').value = cfg.mqttPass;
+$('cfgMqttPort').value = cfg.mqttPort;
+$('cfgMqttPath').value = cfg.mqttPath;
+
+function saveSettings(){
+  cfg.relayHost = cleanHost($('cfgRelayHost').value);
+  cfg.token     = $('cfgToken').value.trim();
+  cfg.mqttHost  = cleanHost($('cfgMqttHost').value);
+  cfg.mqttUser  = $('cfgMqttUser').value.trim();
+  cfg.mqttPass  = $('cfgMqttPass').value.trim();
+  cfg.mqttPort  = $('cfgMqttPort').value.trim() || '8884';
+  cfg.mqttPath  = ($('cfgMqttPath').value.trim() || '/mqtt').replace(/^([^/])/, '/$1');
+  if(!cfg.relayHost || !cfg.mqttHost){
+    showToast('กรอก Render host และ HiveMQ host ก่อนบันทึก');
+    return;
+  }
+  localStorage.setItem('camViewerCfg', JSON.stringify(cfg));
+  settingsDlg.close();
+  connectCam();
+  connectMqtt();
+}
+
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'), 1600);
+}
+
+/* นาฬิกาบนมุมภาพ */
+setInterval(()=>{ $('clock').textContent = new Date().toLocaleTimeString('th-TH', {hour12:false}); }, 1000);
+
+if(!cfg.relayHost || !cfg.mqttHost){
+  setTimeout(()=>settingsDlg.showModal(), 300);
+}
+
+/* ===================== WebSocket ไปยัง Render relay (วิดีโอ/เสียง/แฟลช/ถ่ายภาพ) ===================== */
+let camSocket = null;
+let camReconnectTimer = null;
+let flashOn = false;
+let muted = false;
+let talking = false;
+
+function setCamStatus(ok, msg){
+  dotCam.className = 'dot ' + (ok ? 'ok' : 'bad');
+  camLabel.textContent = 'กล้อง: ' + msg;
+  recBadge.style.display = ok ? 'flex' : 'none';
+}
+
+function connectCam(){
+  if(!cfg.relayHost) return;
+  clearTimeout(camReconnectTimer);
+  if(camSocket){ try{ camSocket.onclose = null; camSocket.close(); }catch(e){} }
+  setCamStatus(false, 'กำลังเชื่อมต่อ…');
+  try{
+    camSocket = new WebSocket('wss://' + cfg.relayHost + '/');
+  }catch(e){
+    setCamStatus(false, 'URL ไม่ถูกต้อง — เช็คค่าใน ⚙');
+    return;
+  }
+  camSocket.binaryType = 'arraybuffer';
+
+  camSocket.onopen = () => { setCamStatus(true, 'เชื่อมต่อแล้ว'); };
+
+  camSocket.onclose = () => {
+    setCamStatus(false, 'ขาดการเชื่อมต่อ — กำลังลองใหม่');
+    placeholder.style.display = 'flex';
+    videoEl.style.display = 'none';
+    clearTimeout(camReconnectTimer);
+    camReconnectTimer = setTimeout(connectCam, 3000);
+  };
+  camSocket.onerror = () => {};
+
+  camSocket.onmessage = (ev) => {
+    try{
+      if(typeof ev.data === 'string') return; // relay ไม่ส่งข้อความ text กลับมา แต่กันไว้
+      const bytes = new Uint8Array(ev.data);
+      if(bytes.length < 2) return;
+      const tag = bytes[0];
+      const payload = bytes.subarray(1);
+
+      if(tag === 0x01){ // เฟรมวิดีโอสด (JPEG)
+        const blob = new Blob([payload], {type:'image/jpeg'});
+        const url = URL.createObjectURL(blob);
+        const old = videoEl.src;
+        videoEl.onload = () => { if(old && old.startsWith('blob:')) URL.revokeObjectURL(old); };
+        videoEl.onerror = () => { URL.revokeObjectURL(url); }; // เฟรมเสีย/ไม่ครบ ไม่ทำให้แอพค้าง
+        videoEl.src = url;
+        placeholder.style.display = 'none';
+        videoEl.style.display = 'block';
+        lastFrameAt = Date.now();
+      } else if(tag === 0x02){ // เสียงจากไมค์กล้อง (PCM16 16kHz mono)
+        if(!muted && !talking && audioUnlocked) playIncomingAudio(payload.buffer.slice(payload.byteOffset, payload.byteOffset+payload.byteLength));
+      } else if(tag === 0x03){ // ภาพถ่ายความละเอียดเต็ม
+        const blob = new Blob([payload], {type:'image/jpeg'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'photo_' + Date.now() + '.jpg';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url), 5000);
+        showToast('บันทึกภาพแล้ว');
+      }
+    }catch(e){
+      // ข้อมูลเฟรมเพี้ยน/ไม่ครบ — ข้ามเฟรมนี้ไป ไม่ให้ทั้งแอพหยุดทำงาน
+    }
+  };
+}
+
+// ถ้าไม่มีเฟรมวิดีโอเข้ามาเลยเกิน 8 วิ ทั้งที่ socket ยังเปิดอยู่ แจ้งเตือนผู้ใช้ (กล้องอาจออฟไลน์)
+let lastFrameAt = 0;
+setInterval(() => {
+  if(camSocket && camSocket.readyState === WebSocket.OPEN && lastFrameAt && Date.now() - lastFrameAt > 8000){
+    camLabel.textContent = 'กล้อง: เชื่อมต่อ relay แล้วแต่ไม่มีภาพเข้ามา (เช็คว่า ESP32-CAM เปิดอยู่)';
+  }
+}, 4000);
+
+function sendCamText(msg){
+  if(camSocket && camSocket.readyState === WebSocket.OPEN) camSocket.send(msg);
+}
+
+flashBtn.onclick = () => {
+  flashOn = !flashOn;
+  sendCamText(flashOn ? 'FLASH_ON' : 'FLASH_OFF');
+  flashBtn.classList.toggle('active', flashOn);
+};
+photoBtn.onclick = () => { sendCamText('TAKE_PHOTO'); showToast('กำลังถ่ายภาพ…'); };
+muteBtn.onclick = () => {
+  muted = !muted;
+  muteBtn.textContent = muted ? '🔇 เสียงจากกล้อง' : '🔊 เสียงจากกล้อง';
+  muteBtn.classList.toggle('active', muted);
+};
+centerBtn.onclick = () => {
+  panSlider.value = 90; tiltSlider.value = 90;
+  panVal.textContent = '90°'; tiltVal.textContent = '90°';
+  publishServo(TOPIC_PAN, 90); publishServo(TOPIC_TILT, 90);
+};
+
+/* ===================== MQTT (HiveMQ Cloud) สำหรับควบคุม servo ===================== */
+let mqttClient = null;
+
+function setMqttStatus(ok, msg){
+  dotMqtt.className = 'dot ' + (ok ? 'ok' : 'bad');
+  mqttLabel.textContent = 'Servo: ' + msg;
+}
+
+function connectMqtt(){
+  if(!cfg.mqttHost) return;
+  if(typeof mqtt === 'undefined'){
+    setMqttStatus(false, 'โหลดไลบรารี MQTT ไม่สำเร็จ (เช็คอินเทอร์เน็ตแล้วรีเฟรชหน้า)');
+    return;
+  }
+  if(mqttClient){ try{ mqttClient.removeAllListeners(); mqttClient.end(true); }catch(e){} }
+  setMqttStatus(false, 'กำลังเชื่อมต่อ…');
+  try{
+    mqttClient = mqtt.connect('wss://' + cfg.mqttHost + ':' + cfg.mqttPort + cfg.mqttPath, {
+      username: cfg.mqttUser,
+      password: cfg.mqttPass,
+      clientId: 'viewer-' + Math.random().toString(16).slice(2),
+      reconnectPeriod: 3000,
+      connectTimeout: 8000,
+      clean: true
+    });
+  }catch(e){
+    setMqttStatus(false, 'ตั้งค่าไม่ถูกต้อง — เช็คค่าใน ⚙');
+    return;
+  }
+  mqttClient.on('connect', () => setMqttStatus(true, 'เชื่อมต่อแล้ว'));
+  mqttClient.on('reconnect', () => setMqttStatus(false, 'กำลังลองใหม่…'));
+  mqttClient.on('close', () => setMqttStatus(false, 'ขาดการเชื่อมต่อ'));
+  mqttClient.on('error', (err) => {
+    setMqttStatus(false, 'เชื่อมต่อไม่สำเร็จ — เช็ค host/user/password ใน ⚙');
+  });
+}
+
+let panPending = null, tiltPending = null;
+function publishServo(topic, val){
+  if(mqttClient && mqttClient.connected){
+    try{ mqttClient.publish(topic, String(val)); }catch(e){}
+  }
+}
+function throttlePublish(topic, val, pendingRef){
+  // ส่งค่าทันทีตัวแรก แล้ว throttle ที่เหลือทุก 120ms กันสแปม MQTT / servo กระตุก
+  if(pendingRef.timer) return pendingRef.next = val;
+  pendingRef.next = val;
+  publishServo(topic, val);
+  pendingRef.timer = setTimeout(() => {
+    pendingRef.timer = null;
+    if(pendingRef.next !== val) publishServo(topic, pendingRef.next);
+  }, 120);
+}
+const panThrottle = {timer:null,next:90}, tiltThrottle = {timer:null,next:90};
+
+panSlider.oninput = () => {
+  panVal.textContent = panSlider.value + '°';
+  throttlePublish(TOPIC_PAN, panSlider.value, panThrottle);
+};
+tiltSlider.oninput = () => {
+  tiltVal.textContent = tiltSlider.value + '°';
+  throttlePublish(TOPIC_TILT, tiltSlider.value, tiltThrottle);
+};
+
+/* ===================== เสียง: เล่นเสียงจากกล้อง (PCM16 16kHz mono) ===================== */
+let audioCtx = null;
+let playHead = 0;
+function ensureAudioCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function playIncomingAudio(arrayBuffer){
+  try{
+    if(arrayBuffer.byteLength < 2) return;
+    const ctx = ensureAudioCtx();
+    const usableLen = arrayBuffer.byteLength - (arrayBuffer.byteLength % 2); // ตัดไบต์เกินคู่ทิ้งกันพัง
+    const int16 = new Int16Array(arrayBuffer, 0, usableLen/2);
+    const float32 = new Float32Array(int16.length);
+    for(let i=0;i<int16.length;i++) float32[i] = int16[i] / 32768;
+    const buf = ctx.createBuffer(1, float32.length, 16000);
+    buf.copyToChannel(float32, 0);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    const now = ctx.currentTime;
+    if(playHead < now + 0.05) playHead = now + 0.05; // กันเสียงกระตุกถ้า buffer มาช้า
+    if(playHead > now + 1.5) playHead = now + 0.05;  // กันเสียงหน่วงสะสมยาวขึ้นเรื่อยๆถ้าเน็ตกระตุก
+    src.start(playHead);
+    playHead += buf.duration;
+  }catch(e){
+    // เสียงชิ้นนี้เสีย/เล่นไม่ได้ — ข้ามไปเล่นชิ้นถัดไป ไม่ให้แอพหยุดทำงาน
+  }
+}
+
+/* ===================== เสียง: กดค้างพูด (push-to-talk) ===================== */
+let micStream = null, micCtx = null, micProcessor = null, micSource = null;
+
+async function startTalk(){
+  if(talking) return;
+  if(!window.isSecureContext){
+    showToast('ต้องเปิดผ่าน https:// ไมค์ถึงจะใช้ได้');
+    return;
+  }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    showToast('เบราว์เซอร์นี้ไม่รองรับการใช้ไมค์');
+    return;
+  }
+  ensureAudioCtx(); audioUnlocked = true; audioUnlockEl.style.display = 'none';
+  talking = true;
+  talkBtn.classList.add('live');
+  talkBtn.textContent = '🎙 กำลังพูด… (ปล่อยเพื่อหยุด)';
+  sendCamText('TALK_START');
+  try{
+    micStream = await navigator.mediaDevices.getUserMedia({audio:{channelCount:1, echoCancellation:true, noiseSuppression:true}});
+    micCtx = new (window.AudioContext || window.webkitAudioContext)();
+    micSource = micCtx.createMediaStreamSource(micStream);
+    micProcessor = micCtx.createScriptProcessor(2048, 1, 1);
+    const srcRate = micCtx.sampleRate;
+    micProcessor.onaudioprocess = (e) => {
+      if(!talking) return;
+      try{
+        const input = e.inputBuffer.getChannelData(0);
+        const down = downsampleTo16k(input, srcRate);
+        if(camSocket && camSocket.readyState === WebSocket.OPEN) camSocket.send(down.buffer);
+      }catch(err){ /* ข้ามช่วงเสียงนี้ไปถ้าแปลงข้อมูลพลาด ไม่ให้ทั้งเซสชันพูดหลุด */ }
+    };
+    micSource.connect(micProcessor);
+    micProcessor.connect(micCtx.destination); // จำเป็นบางเบราว์เซอร์เพื่อให้ onaudioprocess ทำงาน
+  }catch(err){
+    showToast('เข้าถึงไมค์ไม่สำเร็จ (เช็คว่าอนุญาตสิทธิ์ไมค์ให้เว็บนี้แล้ว)');
+    stopTalk();
+  }
+}
+function stopTalk(){
+  if(!talking) return;
+  talking = false;
+  talkBtn.classList.remove('live');
+  talkBtn.textContent = '🎙 กดค้างเพื่อพูด';
+  sendCamText('TALK_STOP');
+  try{ if(micProcessor){ micProcessor.disconnect(); micProcessor.onaudioprocess = null; } }catch(e){}
+  try{ if(micSource) micSource.disconnect(); }catch(e){}
+  try{ if(micStream) micStream.getTracks().forEach(t=>t.stop()); }catch(e){}
+  try{ if(micCtx) micCtx.close(); }catch(e){}
+}
+function downsampleTo16k(float32, srcRate){
+  const ratio = srcRate / 16000;
+  const outLen = Math.floor(float32.length / ratio);
+  const out = new Int16Array(outLen);
+  for(let i=0;i<outLen;i++){
+    const s = float32[Math.floor(i*ratio)];
+    const clamped = Math.max(-1, Math.min(1, s));
+    out[i] = clamped < 0 ? clamped*0x8000 : clamped*0x7FFF;
+  }
+  return out;
+}
+
+talkBtn.addEventListener('touchstart', e => { e.preventDefault(); startTalk(); }, {passive:false});
+talkBtn.addEventListener('touchend',   e => { e.preventDefault(); stopTalk();  }, {passive:false});
+talkBtn.addEventListener('mousedown', startTalk);
+talkBtn.addEventListener('mouseup', stopTalk);
+talkBtn.addEventListener('mouseleave', () => { if(talking) stopTalk(); });
+
+/* ===================== เริ่มทำงาน ===================== */
+if(cfg.relayHost) connectCam();
+if(cfg.mqttHost) connectMqtt();
+</script>
+</body>
+</html>
