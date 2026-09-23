@@ -3,99 +3,141 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>กล้องวงจรปิด — แผงควบคุม</title>
+<title>กล้องวงจรปิด</title>
 <style>
   :root{
-    --bg:#0a0a0a;
-    --panel:#141210;
-    --line:#2a2622;
-    --amber:#ffb300;
-    --amber-dim:#8a6100;
-    --red:#ff4433;
-    --green:#4caf50;
-    --text:#e8e2d5;
-    --text-dim:#8a8378;
+    --bg:#f2f4f7;
+    --card:#ffffff;
+    --border:#e7e9ee;
+    --ink:#16202b;
+    --ink-dim:#6b7684;
+    --navy:#1d3557;
+    --navy-soft:#e9eef7;
+    --green:#1f9d55;
+    --green-soft:#e7f8ee;
+    --red:#dc2626;
+    --red-soft:#fdecec;
+    --shadow:0 2px 14px rgba(16,24,40,.06);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     overscroll-behavior:none;}
-  .mono{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;}
+  .wrap{max-width:480px;margin:0 auto;padding:16px 16px 40px;}
 
-  .wrap{max-width:520px;margin:0 auto;padding:14px 14px 40px;}
+  /* ---------- header ---------- */
+  header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;}
+  header h1{font-size:20px;font-weight:700;margin:0;letter-spacing:-.2px;}
+  header .sub{font-size:13px;color:var(--ink-dim);margin-top:2px;}
+  .head-right{display:flex;align-items:center;gap:8px;}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;
+    font-size:12px;font-weight:600;}
+  .pill.green{background:var(--green-soft);color:var(--green);}
+  .pill.red{background:var(--red-soft);color:var(--red);}
+  .pill.gray{background:#eef0f3;color:var(--ink-dim);}
+  .pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+  .icon-btn{width:34px;height:34px;border-radius:10px;border:1px solid var(--border);background:var(--card);
+    display:flex;align-items:center;justify-content:center;color:var(--ink-dim);cursor:pointer;flex:none;}
+  .icon-btn svg{width:17px;height:17px;}
 
-  header{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 14px;}
-  header h1{font-size:15px;font-weight:600;letter-spacing:.3px;margin:0;color:var(--text);}
-  header .sub{font-size:11px;color:var(--text-dim);margin-top:2px;}
-  .gear{background:none;border:1px solid var(--line);color:var(--text-dim);
-    width:34px;height:34px;border-radius:8px;font-size:16px;cursor:pointer;}
+  /* ---------- video card ---------- */
+  .video-card{background:#0c1116;border-radius:20px;overflow:hidden;box-shadow:var(--shadow);
+    position:relative;aspect-ratio:4/3;}
+  .video-card img{width:100%;height:100%;object-fit:cover;display:block;}
+  .video-card .placeholder{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px;
+    align-items:center;justify-content:center;color:#7d8794;font-size:13px;text-align:center;padding:24px;}
+  .placeholder svg{width:30px;height:30px;opacity:.6;}
+  .badge{position:absolute;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+    padding:5px 9px;border-radius:8px;background:rgba(12,17,22,.55);backdrop-filter:blur(4px);color:#fff;}
+  .badge.rec{top:12px;left:12px;color:#ff6b6b;}
+  .badge.rec .dot{width:6px;height:6px;border-radius:50%;background:#ff3b30;animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .badge.time{left:12px;bottom:12px;font-weight:500;color:#dfe3e8;}
+  .badge.pos{right:12px;bottom:12px;font-weight:600;}
+  .mute-btn{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:9px;border:none;
+    background:rgba(12,17,22,.55);backdrop-filter:blur(4px);color:#fff;display:flex;align-items:center;
+    justify-content:center;cursor:pointer;}
+  .mute-btn svg{width:15px;height:15px;}
 
-  .status-row{display:flex;gap:10px;margin-bottom:10px;font-size:11px;}
-  .status{display:flex;align-items:center;gap:6px;padding:5px 9px;border:1px solid var(--line);
-    border-radius:20px;color:var(--text-dim);}
-  .dot{width:7px;height:7px;border-radius:50%;background:#4a453c;flex:none;}
-  .dot.ok{background:var(--green);box-shadow:0 0 6px var(--green);}
-  .dot.bad{background:var(--red);box-shadow:0 0 6px var(--red);}
+  .status-strip{display:flex;justify-content:center;margin-top:14px;}
 
-  .frame{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;
-    background:#000;aspect-ratio:4/3;}
-  .frame img{width:100%;height:100%;object-fit:cover;display:block;}
-  .frame .placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    color:var(--text-dim);font-size:12px;text-align:center;padding:20px;}
-  .corner{position:absolute;width:16px;height:16px;border-color:var(--amber);opacity:.8;}
-  .corner.tl{top:8px;left:8px;border-top:2px solid;border-left:2px solid;}
-  .corner.tr{top:8px;right:8px;border-top:2px solid;border-right:2px solid;}
-  .corner.bl{bottom:8px;left:8px;border-bottom:2px solid;border-left:2px solid;}
-  .corner.br{bottom:8px;right:8px;border-bottom:2px solid;border-right:2px solid;}
-  .rec{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:5px;
-    font-size:10px;color:var(--red);background:rgba(0,0,0,.5);padding:3px 7px;border-radius:4px;}
-  .rec .b{width:6px;height:6px;border-radius:50%;background:var(--red);animation:pulse 1.4s infinite;}
-  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
-  .clock{position:absolute;bottom:10px;right:10px;font-size:10px;color:var(--amber);
-    background:rgba(0,0,0,.5);padding:3px 7px;border-radius:4px;}
+  /* ---------- cards ---------- */
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:18px;margin-top:14px;}
+  .card-title{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;margin:0 0 14px;}
+  .card-title svg{width:17px;height:17px;color:var(--ink-dim);}
+  .card-title .spacer{flex:1;}
 
-  .toast{position:absolute;top:10px;right:10px;font-size:10px;background:rgba(0,0,0,.6);
-    color:var(--amber);padding:4px 8px;border-radius:4px;opacity:0;transition:opacity .3s;}
-  .toast.show{opacity:1;}
+  /* ---------- position readout ---------- */
+  .pos-row{display:flex;gap:16px;align-items:center;}
+  .minimap{width:88px;height:88px;border-radius:14px;background:#f6f7f9;border:1px solid var(--border);
+    position:relative;flex:none;}
+  .minimap::before,.minimap::after{content:'';position:absolute;background:#dfe2e7;}
+  .minimap::before{left:0;right:0;top:50%;height:1px;}
+  .minimap::after{top:0;bottom:0;left:50%;width:1px;}
+  .minimap .zone{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px;
+    border-radius:50%;border:1px solid #dfe2e7;}
+  .minimap .dot{position:absolute;width:11px;height:11px;border-radius:50%;background:var(--navy);
+    box-shadow:0 0 0 4px var(--navy-soft);transform:translate(-50%,-50%);transition:left .12s,top .12s;}
+  .pos-detail{flex:1;min-width:0;}
+  .pos-detail .label{font-size:12px;color:var(--ink-dim);}
+  .pos-detail .value{font-size:16px;font-weight:700;margin-top:1px;}
+  .bar-group{margin-top:12px;}
+  .bar-group .bar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-dim);
+    margin-bottom:5px;}
+  .bar-track{position:relative;height:4px;border-radius:2px;background:#e9ebef;}
+  .bar-track .notch{position:absolute;top:50%;width:9px;height:9px;border-radius:50%;background:var(--navy);
+    transform:translate(-50%,-50%);transition:left .12s;}
 
-  section{margin-top:16px;}
-  .label-row{display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:6px;}
-  .label-row b{color:var(--text);font-weight:600;}
+  /* ---------- joystick ---------- */
+  .joystick-wrap{display:flex;justify-content:center;padding:6px 0 4px;}
+  .joystick{width:220px;height:220px;border-radius:50%;background:radial-gradient(circle at 50% 45%,#f8f9fb,#eef0f3);
+    border:1px solid var(--border);position:relative;touch-action:none;cursor:grab;}
+  .joystick::before,.joystick::after{content:'';position:absolute;background:#e2e5ea;}
+  .joystick::before{left:14px;right:14px;top:50%;height:1px;}
+  .joystick::after{top:14px;bottom:14px;left:50%;width:1px;}
+  .joystick .ring{position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px;
+    border-radius:50%;border:1px solid #e2e5ea;}
+  .knob{position:absolute;left:50%;top:50%;width:64px;height:64px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#2c4c78,var(--navy) 70%);
+    box-shadow:0 6px 16px rgba(29,53,87,.35);display:flex;align-items:center;justify-content:center;}
+  .knob::after{content:'';width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.85);}
+  .joystick-hint{text-align:center;font-size:12px;color:var(--ink-dim);margin-top:10px;}
 
-  input[type=range]{-webkit-appearance:none;width:100%;height:34px;background:transparent;}
-  input[type=range]::-webkit-slider-runnable-track{height:4px;background:var(--line);border-radius:2px;}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;margin-top:-10px;
-    border-radius:50%;background:var(--amber);border:2px solid #000;box-shadow:0 0 8px rgba(255,179,0,.5);}
-  input[type=range]::-moz-range-track{height:4px;background:var(--line);border-radius:2px;}
-  input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--amber);border:2px solid #000;}
+  /* ---------- action row ---------- */
+  .actions{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;}
+  .action-btn{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);
+    padding:14px 4px 12px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;
+    color:var(--ink);}
+  .action-btn .ico{width:38px;height:38px;border-radius:11px;background:#f2f4f7;display:flex;
+    align-items:center;justify-content:center;color:var(--ink);}
+  .action-btn .ico svg{width:18px;height:18px;}
+  .action-btn span{font-size:11.5px;font-weight:600;color:var(--ink-dim);}
+  .action-btn.active .ico{background:var(--navy);color:#fff;}
+  .action-btn.active span{color:var(--navy);}
+  .action-btn.live .ico{background:var(--red);color:#fff;}
+  .action-btn.live span{color:var(--red);}
+  .action-btn:active{transform:scale(.96);}
 
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
-  button.ctrl{background:var(--panel);border:1px solid var(--line);color:var(--text);
-    padding:14px 10px;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;gap:8px;}
-  button.ctrl.active{border-color:var(--amber);color:var(--amber);background:#221c0c;}
-  button.ctrl:active{transform:scale(.97);}
+  .foot-note{text-align:center;font-size:11.5px;color:var(--ink-dim);margin-top:16px;line-height:1.6;}
 
-  .talk-btn{margin-top:12px;width:100%;padding:20px;border-radius:12px;border:1px solid var(--line);
-    background:var(--panel);color:var(--text);font-size:14px;font-weight:600;text-align:center;
-    user-select:none;touch-action:none;cursor:pointer;}
-  .talk-btn.live{background:#2a1200;border-color:var(--amber);color:var(--amber);
-    box-shadow:0 0 20px rgba(255,179,0,.15);}
-
-  dialog{border:none;border-radius:12px;background:var(--panel);color:var(--text);width:88%;max-width:400px;
-    padding:0;}
-  dialog::backdrop{background:rgba(0,0,0,.6);}
-  .dlg-inner{padding:18px;}
-  .dlg-inner h2{font-size:14px;margin:0 0 14px;}
-  .field{margin-bottom:10px;}
-  .field label{display:block;font-size:11px;color:var(--text-dim);margin-bottom:4px;}
-  .field input{width:100%;background:#0d0b09;border:1px solid var(--line);color:var(--text);
-    padding:9px 10px;border-radius:7px;font-size:13px;}
+  /* ---------- settings dialog ---------- */
+  dialog{border:none;border-radius:18px;background:var(--card);color:var(--ink);width:88%;max-width:400px;padding:0;}
+  dialog::backdrop{background:rgba(16,24,40,.45);}
+  .dlg-inner{padding:20px;}
+  .dlg-inner h2{font-size:16px;margin:0 0 14px;}
+  .field{margin-bottom:11px;}
+  .field label{display:block;font-size:11.5px;color:var(--ink-dim);margin-bottom:4px;}
+  .field input{width:100%;background:#f6f7f9;border:1px solid var(--border);color:var(--ink);
+    padding:10px 11px;border-radius:9px;font-size:13px;}
   .dlg-btns{display:flex;gap:8px;margin-top:14px;}
-  .dlg-btns button{flex:1;padding:11px;border-radius:8px;border:1px solid var(--line);
-    background:#0d0b09;color:var(--text);font-size:13px;}
-  .dlg-btns button.primary{background:var(--amber);color:#000;border-color:var(--amber);font-weight:600;}
-  .hint{font-size:10px;color:var(--text-dim);margin-top:10px;line-height:1.5;}
+  .dlg-btns button{flex:1;padding:12px;border-radius:10px;border:1px solid var(--border);
+    background:#f6f7f9;color:var(--ink);font-size:13.5px;font-weight:600;}
+  .dlg-btns button.primary{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .hint{font-size:10.5px;color:var(--ink-dim);margin-top:10px;line-height:1.5;}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#16202b;color:#fff;
+    font-size:12.5px;padding:9px 16px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none;
+    z-index:50;}
+  .toast.show{opacity:1;}
 </style>
 </head>
 <body>
@@ -103,57 +145,96 @@
 
   <header>
     <div>
-      <h1>กล้องวงจรปิด</h1>
-      <div class="sub">แผงควบคุมฝั่งผู้ชม</div>
+      <h1 id="camTitle">กล้องวงจรปิด</h1>
+      <div class="sub" id="camSub">แผงควบคุมฝั่งผู้ชม</div>
     </div>
-    <button class="gear" onclick="settingsDlg.showModal()">⚙</button>
+    <div class="head-right">
+      <span class="pill gray" id="overallPill"><span class="dot"></span><span id="overallPillText">กำลังเชื่อมต่อ</span></span>
+      <button class="icon-btn" onclick="settingsDlg.showModal()" aria-label="ตั้งค่า">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 13a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V19a2 2 0 11-4 0v-.09a1.7 1.7 0 00-1-1.55 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.55-1H4a2 2 0 110-4h.09a1.7 1.7 0 001.55-1 1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34H10a1.7 1.7 0 001-1.55V4a2 2 0 114 0v.09a1.7 1.7 0 001 1.55 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87V10a1.7 1.7 0 001.55 1H20a2 2 0 110 4h-.09a1.7 1.7 0 00-1.55 1z"/></svg>
+      </button>
+    </div>
   </header>
 
-  <div class="status-row">
-    <div class="status"><span id="dotCam" class="dot"></span><span id="camLabel">กล้อง: กำลังเชื่อมต่อ…</span></div>
-    <div class="status"><span id="dotMqtt" class="dot"></span><span id="mqttLabel">Servo: กำลังเชื่อมต่อ…</span></div>
+  <div class="video-card" id="videoCard">
+    <div class="placeholder" id="placeholder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      <span>ยังไม่มีภาพ — ตรวจว่า ESP32-CAM เปิดอยู่และตั้งค่าใน ⚙ ถูกต้อง</span>
+    </div>
+    <img id="video" style="display:none">
+    <div class="badge rec" id="recBadge" style="display:none"><span class="dot"></span>REC</div>
+    <div class="badge time" id="clock"></div>
+    <div class="badge pos" id="posBadge">ตรงกลาง · ระดับสายตา</div>
+    <button class="mute-btn" id="muteBtn" aria-label="เสียงจากกล้อง">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" id="muteIcon"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7"/><path d="M18.5 6a9 9 0 010 12"/></svg>
+    </button>
   </div>
 
-  <div class="frame" id="frame">
-    <div class="placeholder" id="placeholder">ยังไม่มีภาพ — ตรวจว่า ESP32-CAM เปิดอยู่และตั้งค่าใน ⚙ ถูกต้อง</div>
-    <img id="video" style="display:none">
-    <div class="corner tl"></div><div class="corner tr"></div>
-    <div class="corner bl"></div><div class="corner br"></div>
-    <div class="rec" id="recBadge" style="display:none"><span class="b"></span>LIVE</div>
-    <div class="clock" id="clock"></div>
-    <div class="toast" id="toast"></div>
-    <div id="audioUnlock" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-      background:rgba(0,0,0,.55);cursor:pointer;font-size:12px;color:var(--amber);text-align:center;padding:20px;">
-      👆 แตะที่นี่เพื่อเปิดเสียงจากกล้อง<br><span style="color:var(--text-dim);font-size:10px;">(เบราว์เซอร์ต้องให้แตะจอก่อนถึงจะเล่นเสียงได้)</span>
+  <div class="status-strip"><span class="pill green" id="readyPill"><span class="dot"></span><span id="readyPillText">กำลังเชื่อมต่อ…</span></span></div>
+
+  <div class="card">
+    <p class="card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>
+      ตำแหน่งกล้องปัจจุบัน
+    </p>
+    <div class="pos-row">
+      <div class="minimap"><div class="zone"></div><div class="dot" id="miniDot"></div></div>
+      <div class="pos-detail">
+        <div class="label">ตำแหน่งเล็ง</div>
+        <div class="value" id="posText">ตรงกลาง · ระดับสายตา</div>
+      </div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>ซ้าย</span><span>แนวนอน</span><span>ขวา</span></div>
+      <div class="bar-track"><div class="notch" id="panNotch"></div></div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label"><span>ก้ม</span><span>แนวตั้ง</span><span>เงย</span></div>
+      <div class="bar-track"><div class="notch" id="tiltNotch"></div></div>
     </div>
   </div>
 
-  <section>
-    <div class="label-row"><span>แพน (ซ้าย ⟷ ขวา)</span><b id="panVal">90°</b></div>
-    <input type="range" id="panSlider" min="0" max="180" value="90">
-  </section>
-
-  <section style="margin-top:6px;">
-    <div class="label-row"><span>ทิลท์ (ก้ม ⟷ เงย)</span><b id="tiltVal">90°</b></div>
-    <input type="range" id="tiltSlider" min="0" max="180" value="90">
-  </section>
-
-  <div class="grid2">
-    <button class="ctrl" id="flashBtn">💡 แฟลช</button>
-    <button class="ctrl" id="photoBtn">📷 ถ่ายภาพ</button>
-    <button class="ctrl" id="muteBtn">🔊 เสียงจากกล้อง</button>
-    <button class="ctrl" id="centerBtn">🎯 กึ่งกลาง</button>
+  <div class="card">
+    <p class="card-title">ควบคุมทิศทาง</p>
+    <div class="joystick-wrap">
+      <div class="joystick" id="joystick">
+        <div class="ring"></div>
+        <div class="knob" id="knob"></div>
+      </div>
+    </div>
+    <div class="joystick-hint">ลากวงกลมเพื่อหมุนกล้อง</div>
+    <div class="joystick-hint" id="servoStatusLine" style="margin-top:2px;">เซอร์โว: กำลังตรวจสอบสถานะ…</div>
   </div>
 
-  <button class="talk-btn" id="talkBtn">🎙 กดค้างเพื่อพูด</button>
+  <div class="actions">
+    <div class="action-btn" id="flashBtn">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg></div>
+      <span>ไฟฉาย</span>
+    </div>
+    <div class="action-btn" id="centerBtn">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
+      <span>กึ่งกลาง</span>
+    </div>
+    <div class="action-btn" id="photoBtn">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.3"/></svg></div>
+      <span>ถ่ายภาพ</span>
+    </div>
+    <div class="action-btn" id="talkBtn">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v4"/></svg></div>
+      <span id="talkLabel">พูด</span>
+    </div>
+  </div>
 
-  <p class="hint">ปล่อยปุ่ม "กดค้างเพื่อพูด" เพื่อกลับไปฟังเสียงจากกล้อง (ระบบเป็น push-to-talk สลับทิศทางเดียว ไม่ใช่พูดพร้อมกันสองทาง)</p>
+  <p class="foot-note">กดค้างปุ่ม "พูด" เพื่อพูด ปล่อยเพื่อกลับไปฟังเสียงจากกล้อง (สลับทิศทางเดียว ไม่ใช่พูดพร้อมกันสองทาง)</p>
+  <p class="foot-note" id="audioStatusNote" style="font-weight:600;">เสียง: กำลังตรวจสอบสถานะฮาร์ดแวร์บนกล้อง…</p>
 
 </div>
 
 <dialog id="settingsDlg">
   <div class="dlg-inner">
     <h2>ตั้งค่าการเชื่อมต่อ</h2>
+    <div class="field"><label>ชื่อ/ตำแหน่งกล้อง (แสดงผลอย่างเดียว ไม่บังคับ)</label>
+      <input id="cfgLabel" placeholder="เช่น CAM-01 · ประตูทางเข้า"></div>
     <div class="field"><label>Render host (relay วิดีโอ)</label>
       <input id="cfgRelayHost" placeholder="your-app-name.onrender.com"></div>
     <div class="field"><label>Device token</label>
@@ -164,7 +245,7 @@
       <input id="cfgMqttUser" placeholder="hivemq_username"></div>
     <div class="field"><label>HiveMQ password</label>
       <input id="cfgMqttPass" type="password" placeholder="hivemq_password"></div>
-    <div class="field"><label>MQTT WebSocket port (ปกติ 8884 — แก้เฉพาะถ้า console บอกไว้ต่างจากนี้)</label>
+    <div class="field"><label>MQTT WebSocket port (ปกติ 8884)</label>
       <input id="cfgMqttPort" placeholder="8884"></div>
     <div class="field"><label>MQTT WebSocket path (ปกติ /mqtt)</label>
       <input id="cfgMqttPath" placeholder="/mqtt"></div>
@@ -176,52 +257,37 @@
   </div>
 </dialog>
 
-<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
 <script>
 /* ===================== ค่าคอนฟิก (แก้ผ่านปุ่ม ⚙ ในแอพได้เลย ไม่ต้องแก้โค้ด) ===================== */
 let savedCfg = {};
 try { savedCfg = JSON.parse(localStorage.getItem('camViewerCfg') || '{}'); } catch(e){ savedCfg = {}; }
 const cfg = Object.assign({
-  relayHost: '',
-  token: '',
-  mqttHost: '',
-  mqttUser: '',
-  mqttPass: '',
-  mqttPort: '8884',
-  mqttPath: '/mqtt'
+  label: '', relayHost: '', token: '', mqttHost: '', mqttUser: '', mqttPass: '',
+  mqttPort: '8884', mqttPath: '/mqtt'
 }, savedCfg);
 
-// ตัด "wss://", "https://" และ "/" ท้ายสตริงออก เผื่อผู้ใช้เผลอวางมาทั้ง URL แทนที่จะเป็นแค่ host
 function cleanHost(v){
-  return String(v || '').trim()
-    .replace(/^wss?:\/\//i, '').replace(/^https?:\/\//i, '')
-    .replace(/\/+$/,'');
+  return String(v || '').trim().replace(/^wss?:\/\//i, '').replace(/^https?:\/\//i, '').replace(/\/+$/,'');
 }
 
 const TOPIC_PAN  = 'securitycam/servo/pan';
 const TOPIC_TILT = 'securitycam/servo/tilt';
+const TOPIC_STATUS = 'securitycam/servo/status';
 
 /* ===================== DOM ===================== */
 const $ = id => document.getElementById(id);
 const videoEl = $('video'), placeholder = $('placeholder'), recBadge = $('recBadge');
-const dotCam = $('dotCam'), camLabel = $('camLabel');
-const dotMqtt = $('dotMqtt'), mqttLabel = $('mqttLabel');
-const panSlider = $('panSlider'), tiltSlider = $('tiltSlider');
-const panVal = $('panVal'), tiltVal = $('tiltVal');
+const overallPill = $('overallPill'), overallPillText = $('overallPillText');
+const readyPill = $('readyPill'), readyPillText = $('readyPillText');
 const flashBtn = $('flashBtn'), photoBtn = $('photoBtn'), muteBtn = $('muteBtn'), centerBtn = $('centerBtn');
-const talkBtn = $('talkBtn'), toast = $('toast');
+const talkBtn = $('talkBtn'), talkLabel = $('talkLabel'), toast = $('toast');
 const settingsDlg = $('settingsDlg');
-const audioUnlockEl = $('audioUnlock');
-let audioUnlocked = false;
-audioUnlockEl.addEventListener('click', () => {
-  ensureAudioCtx();
-  audioUnlocked = true;
-  audioUnlockEl.style.display = 'none';
-});
-document.body.addEventListener('pointerdown', () => {
-  if(!audioUnlocked){ ensureAudioCtx(); audioUnlocked = true; audioUnlockEl.style.display = 'none'; }
-}, {once:true});
+const audioUnlockNeeded = { current: true };
 
+$('cfgLabel').value = cfg.label;
 $('cfgRelayHost').value = cfg.relayHost;
 $('cfgToken').value = cfg.token;
 $('cfgMqttHost').value = cfg.mqttHost;
@@ -230,7 +296,13 @@ $('cfgMqttPass').value = cfg.mqttPass;
 $('cfgMqttPort').value = cfg.mqttPort;
 $('cfgMqttPath').value = cfg.mqttPath;
 
+function applyLabel(){
+  $('camSub').textContent = cfg.label || 'แผงควบคุมฝั่งผู้ชม';
+}
+applyLabel();
+
 function saveSettings(){
+  cfg.label     = $('cfgLabel').value.trim();
   cfg.relayHost = cleanHost($('cfgRelayHost').value);
   cfg.token     = $('cfgToken').value.trim();
   cfg.mqttHost  = cleanHost($('cfgMqttHost').value);
@@ -243,6 +315,7 @@ function saveSettings(){
     return;
   }
   localStorage.setItem('camViewerCfg', JSON.stringify(cfg));
+  applyLabel();
   settingsDlg.close();
   connectCam();
   connectMqtt();
@@ -251,15 +324,54 @@ function saveSettings(){
 function showToast(msg){
   toast.textContent = msg;
   toast.classList.add('show');
-  setTimeout(()=>toast.classList.remove('show'), 1600);
+  setTimeout(()=>toast.classList.remove('show'), 1800);
 }
 
-/* นาฬิกาบนมุมภาพ */
 setInterval(()=>{ $('clock').textContent = new Date().toLocaleTimeString('th-TH', {hour12:false}); }, 1000);
 
 if(!cfg.relayHost || !cfg.mqttHost){
   setTimeout(()=>settingsDlg.showModal(), 300);
 }
+
+/* ===================== สถานะรวม (แสดงเป็นข้อความอ่านง่าย ไม่มีศัพท์เทคนิค) ===================== */
+let camState = 'connecting';   // connecting | open | noFrame | streaming | closed
+let mqttState = 'connecting';  // connecting | open | closed
+let servoDeviceState = 'unknown'; // unknown | online | offline (มาจาก topic สถานะจริงของบอร์ดเซอร์โว ไม่ใช่แค่ browser ต่อ broker ติด)
+let audioHwReady = null; // null=ยังไม่รู้, true=กล้องติดตั้ง I2S สำเร็จ, false=ไม่สำเร็จ (มาจากข้อความ AUDIO_STATUS ที่กล้องส่งมาตอนต่อติด)
+
+function updateAudioStatusUI(){
+  const el = $('audioStatusNote');
+  if(!el) return;
+  if(audioHwReady === true){ el.textContent = 'เสียง: ฮาร์ดแวร์ไมค์/ลำโพงบนกล้องพร้อมใช้งาน'; el.style.color = 'var(--green)'; }
+  else if(audioHwReady === false){ el.textContent = 'เสียง: กล้องติดตั้งไมค์/ลำโพงไม่สำเร็จ (ปัญหาที่ตัวกล้อง/สาย I2S เช็ค Serial Monitor เพิ่มเติมได้)'; el.style.color = 'var(--red)'; }
+  else { el.textContent = 'เสียง: กำลังตรวจสอบสถานะฮาร์ดแวร์บนกล้อง…'; el.style.color = 'var(--ink-dim)'; }
+}
+
+function refreshOverallStatus(){
+  const servoOk = servoDeviceState === 'online';
+  const bothOpen = (camState === 'open' || camState === 'noFrame' || camState === 'streaming') && mqttState === 'open' && servoOk;
+  overallPill.className = 'pill ' + (bothOpen ? 'green' : (camState==='closed'||mqttState==='closed' ? 'red' : 'gray'));
+  overallPillText.textContent = bothOpen ? 'ออนไลน์' : ((camState==='closed'||mqttState==='closed') ? 'ออฟไลน์' : 'กำลังเชื่อมต่อ');
+
+  let readyClass = 'gray', readyText = 'กำลังเชื่อมต่อ…';
+  if(camState === 'streaming' && mqttState === 'open' && servoOk){ readyClass = 'green'; readyText = 'พร้อมใช้งาน'; }
+  else if(camState === 'noFrame'){ readyClass = 'red'; readyText = 'ไม่มีภาพจากกล้อง'; }
+  else if(camState === 'closed' || mqttState === 'closed'){ readyClass = 'red'; readyText = 'ขาดการเชื่อมต่อ — กำลังลองใหม่'; }
+  else if(mqttState === 'open' && servoDeviceState === 'offline'){ readyClass = 'red'; readyText = 'กล้องพร้อม แต่บอร์ดเซอร์โวออฟไลน์'; }
+  readyPill.className = 'pill ' + readyClass;
+  readyPillText.textContent = readyText;
+
+  updateServoStatusLine();
+}
+function updateServoStatusLine(){
+  const el = $('servoStatusLine');
+  if(!el) return;
+  if(mqttState !== 'open'){ el.textContent = 'เซอร์โว: ยังไม่เชื่อมต่อ MQTT'; el.style.color = 'var(--ink-dim)'; }
+  else if(servoDeviceState === 'online'){ el.textContent = 'เซอร์โว: อุปกรณ์ออนไลน์'; el.style.color = 'var(--green)'; }
+  else if(servoDeviceState === 'offline'){ el.textContent = 'เซอร์โว: บอร์ดออฟไลน์ (เช็คไฟเลี้ยง/WiFi ของบอร์ดเซอร์โว)'; el.style.color = 'var(--red)'; }
+  else { el.textContent = 'เซอร์โว: กำลังตรวจสอบสถานะ…'; el.style.color = 'var(--ink-dim)'; }
+}
+refreshOverallStatus();
 
 /* ===================== WebSocket ไปยัง Render relay (วิดีโอ/เสียง/แฟลช/ถ่ายภาพ) ===================== */
 let camSocket = null;
@@ -267,32 +379,31 @@ let camReconnectTimer = null;
 let flashOn = false;
 let muted = false;
 let talking = false;
-
-function setCamStatus(ok, msg){
-  dotCam.className = 'dot ' + (ok ? 'ok' : 'bad');
-  camLabel.textContent = 'กล้อง: ' + msg;
-  recBadge.style.display = ok ? 'flex' : 'none';
-}
+let lastFrameAt = 0;
+let camConnectedAt = 0;
 
 function connectCam(){
   if(!cfg.relayHost) return;
   clearTimeout(camReconnectTimer);
   if(camSocket){ try{ camSocket.onclose = null; camSocket.close(); }catch(e){} }
-  setCamStatus(false, 'กำลังเชื่อมต่อ…');
+  camState = 'connecting'; refreshOverallStatus();
   try{
     camSocket = new WebSocket('wss://' + cfg.relayHost + '/');
   }catch(e){
-    setCamStatus(false, 'URL ไม่ถูกต้อง — เช็คค่าใน ⚙');
+    camState = 'closed'; refreshOverallStatus();
     return;
   }
   camSocket.binaryType = 'arraybuffer';
 
-  camSocket.onopen = () => { setCamStatus(true, 'เชื่อมต่อแล้ว'); };
-
+  camSocket.onopen = () => {
+    camState = 'open'; camConnectedAt = Date.now(); lastFrameAt = 0; refreshOverallStatus();
+  };
   camSocket.onclose = () => {
-    setCamStatus(false, 'ขาดการเชื่อมต่อ — กำลังลองใหม่');
+    camState = 'closed'; refreshOverallStatus();
     placeholder.style.display = 'flex';
     videoEl.style.display = 'none';
+    recBadge.style.display = 'none';
+    audioHwReady = null; updateAudioStatusUI();
     clearTimeout(camReconnectTimer);
     camReconnectTimer = setTimeout(connectCam, 3000);
   };
@@ -300,25 +411,33 @@ function connectCam(){
 
   camSocket.onmessage = (ev) => {
     try{
-      if(typeof ev.data === 'string') return; // relay ไม่ส่งข้อความ text กลับมา แต่กันไว้
+      if(typeof ev.data === 'string'){
+        if(ev.data.startsWith('AUDIO_STATUS:')){
+          audioHwReady = (ev.data.split(':')[1] === '1');
+          updateAudioStatusUI();
+        }
+        return;
+      }
       const bytes = new Uint8Array(ev.data);
       if(bytes.length < 2) return;
       const tag = bytes[0];
       const payload = bytes.subarray(1);
 
-      if(tag === 0x01){ // เฟรมวิดีโอสด (JPEG)
+      if(tag === 0x01){
         const blob = new Blob([payload], {type:'image/jpeg'});
         const url = URL.createObjectURL(blob);
         const old = videoEl.src;
         videoEl.onload = () => { if(old && old.startsWith('blob:')) URL.revokeObjectURL(old); };
-        videoEl.onerror = () => { URL.revokeObjectURL(url); }; // เฟรมเสีย/ไม่ครบ ไม่ทำให้แอพค้าง
+        videoEl.onerror = () => { URL.revokeObjectURL(url); };
         videoEl.src = url;
         placeholder.style.display = 'none';
         videoEl.style.display = 'block';
+        recBadge.style.display = 'flex';
         lastFrameAt = Date.now();
-      } else if(tag === 0x02){ // เสียงจากไมค์กล้อง (PCM16 16kHz mono)
-        if(!muted && !talking && audioUnlocked) playIncomingAudio(payload.buffer.slice(payload.byteOffset, payload.byteOffset+payload.byteLength));
-      } else if(tag === 0x03){ // ภาพถ่ายความละเอียดเต็ม
+        camState = 'streaming'; refreshOverallStatus();
+      } else if(tag === 0x02){
+        if(!muted && !talking && !audioUnlockNeeded.current) playIncomingAudio(payload.buffer.slice(payload.byteOffset, payload.byteOffset+payload.byteLength));
+      } else if(tag === 0x03){
         const blob = new Blob([payload], {type:'image/jpeg'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -327,17 +446,16 @@ function connectCam(){
         setTimeout(()=>URL.revokeObjectURL(url), 5000);
         showToast('บันทึกภาพแล้ว');
       }
-    }catch(e){
-      // ข้อมูลเฟรมเพี้ยน/ไม่ครบ — ข้ามเฟรมนี้ไป ไม่ให้ทั้งแอพหยุดทำงาน
-    }
+    }catch(e){ /* เฟรมเพี้ยน ข้ามไป */ }
   };
 }
 
-// ถ้าไม่มีเฟรมวิดีโอเข้ามาเลยเกิน 8 วิ ทั้งที่ socket ยังเปิดอยู่ แจ้งเตือนผู้ใช้ (กล้องอาจออฟไลน์)
-let lastFrameAt = 0;
 setInterval(() => {
-  if(camSocket && camSocket.readyState === WebSocket.OPEN && lastFrameAt && Date.now() - lastFrameAt > 8000){
-    camLabel.textContent = 'กล้อง: เชื่อมต่อ relay แล้วแต่ไม่มีภาพเข้ามา (เช็คว่า ESP32-CAM เปิดอยู่)';
+  if(camSocket && camSocket.readyState === WebSocket.OPEN){
+    const baseline = lastFrameAt || camConnectedAt;
+    if(baseline && Date.now() - baseline > 8000 && camState !== 'noFrame'){
+      camState = 'noFrame'; refreshOverallStatus();
+    }
   }
 }, 4000);
 
@@ -351,80 +469,164 @@ flashBtn.onclick = () => {
   flashBtn.classList.toggle('active', flashOn);
 };
 photoBtn.onclick = () => { sendCamText('TAKE_PHOTO'); showToast('กำลังถ่ายภาพ…'); };
+
+let muteIconOff = false;
 muteBtn.onclick = () => {
   muted = !muted;
-  muteBtn.textContent = muted ? '🔇 เสียงจากกล้อง' : '🔊 เสียงจากกล้อง';
-  muteBtn.classList.toggle('active', muted);
+  const icon = $('muteIcon');
+  icon.innerHTML = muted
+    ? '<path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>'
+    : '<path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7"/><path d="M18.5 6a9 9 0 010 12"/>';
 };
-centerBtn.onclick = () => {
-  panSlider.value = 90; tiltSlider.value = 90;
-  panVal.textContent = '90°'; tiltVal.textContent = '90°';
-  publishServo(TOPIC_PAN, 90); publishServo(TOPIC_TILT, 90);
-};
+
+/* ===================== จอยสติ๊กควบคุมทิศทาง (ต้องประกาศก่อน updatePositionUI เพราะมันอ้างถึงตัวแปรพวกนี้) ===================== */
+const joystick = $('joystick'), knob = $('knob');
+let dragging = false;
+function joystickRadius(){
+  return joystick.clientWidth / 2 - 34; // เผื่อระยะให้ knob (64px) ไม่ล้นขอบวงกลม
+}
+
+/* ===================== ตำแหน่งกล้อง: แปลงองศาเป็นคำอ่านง่าย ไม่โชว์ตัวเลข ===================== */
+let panAngle = 90, tiltAngle = 90;
+
+function describePan(v){
+  if(v < 36) return 'ซ้ายสุด';
+  if(v < 72) return 'ซ้าย';
+  if(v < 108) return 'ตรงกลาง';
+  if(v < 144) return 'ขวา';
+  return 'ขวาสุด';
+}
+function describeTilt(v){
+  if(v < 36) return 'ก้มสุด';
+  if(v < 72) return 'ก้ม';
+  if(v < 108) return 'ระดับสายตา';
+  if(v < 144) return 'เงย';
+  return 'เงยสุด';
+}
+
+function updatePositionUI(){
+  const label = describePan(panAngle) + ' · ' + describeTilt(tiltAngle);
+  $('posText').textContent = label;
+  $('posBadge').textContent = label;
+
+  const px = (panAngle/180*100), py = (100 - tiltAngle/180*100);
+  $('miniDot').style.left = px + '%';
+  $('miniDot').style.top  = py + '%';
+  $('panNotch').style.left  = px + '%';
+  $('tiltNotch').style.left = (tiltAngle/180*100) + '%';
+
+  if(!dragging){
+    const radius = joystickRadius();
+    const dx = (panAngle - 90) / 90 * radius;
+    const dy = (90 - tiltAngle) / 90 * radius;
+    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+  }
+}
+updatePositionUI();
 
 /* ===================== MQTT (HiveMQ Cloud) สำหรับควบคุม servo ===================== */
 let mqttClient = null;
 
-function setMqttStatus(ok, msg){
-  dotMqtt.className = 'dot ' + (ok ? 'ok' : 'bad');
-  mqttLabel.textContent = 'Servo: ' + msg;
-}
-
 function connectMqtt(){
   if(!cfg.mqttHost) return;
   if(typeof mqtt === 'undefined'){
-    setMqttStatus(false, 'โหลดไลบรารี MQTT ไม่สำเร็จ (เช็คอินเทอร์เน็ตแล้วรีเฟรชหน้า)');
+    mqttState = 'closed'; refreshOverallStatus();
+    showToast('โหลดไลบรารี MQTT ไม่สำเร็จ (เช็คอินเทอร์เน็ตแล้วรีเฟรช)');
     return;
   }
   if(mqttClient){ try{ mqttClient.removeAllListeners(); mqttClient.end(true); }catch(e){} }
-  setMqttStatus(false, 'กำลังเชื่อมต่อ…');
+  mqttState = 'connecting'; refreshOverallStatus();
   try{
     mqttClient = mqtt.connect('wss://' + cfg.mqttHost + ':' + cfg.mqttPort + cfg.mqttPath, {
-      username: cfg.mqttUser,
-      password: cfg.mqttPass,
+      username: cfg.mqttUser, password: cfg.mqttPass,
       clientId: 'viewer-' + Math.random().toString(16).slice(2),
-      reconnectPeriod: 3000,
-      connectTimeout: 8000,
-      clean: true
+      reconnectPeriod: 3000, connectTimeout: 8000, clean: true
     });
   }catch(e){
-    setMqttStatus(false, 'ตั้งค่าไม่ถูกต้อง — เช็คค่าใน ⚙');
+    mqttState = 'closed'; refreshOverallStatus();
     return;
   }
-  mqttClient.on('connect', () => setMqttStatus(true, 'เชื่อมต่อแล้ว'));
-  mqttClient.on('reconnect', () => setMqttStatus(false, 'กำลังลองใหม่…'));
-  mqttClient.on('close', () => setMqttStatus(false, 'ขาดการเชื่อมต่อ'));
-  mqttClient.on('error', (err) => {
-    setMqttStatus(false, 'เชื่อมต่อไม่สำเร็จ — เช็ค host/user/password ใน ⚙');
+  mqttClient.on('connect', () => {
+    mqttState = 'open';
+    servoDeviceState = 'unknown'; // รอฟังสถานะจริงจาก topic retained อีกครั้ง
+    mqttClient.subscribe(TOPIC_STATUS);
+    refreshOverallStatus();
   });
+  mqttClient.on('message', (topic, message) => {
+    if(topic === TOPIC_STATUS){
+      servoDeviceState = (message.toString() === 'online') ? 'online' : 'offline';
+      refreshOverallStatus();
+    }
+  });
+  mqttClient.on('reconnect', () => { mqttState = 'connecting'; refreshOverallStatus(); });
+  mqttClient.on('close', () => { mqttState = 'closed'; servoDeviceState = 'unknown'; refreshOverallStatus(); });
+  mqttClient.on('error', () => { mqttState = 'closed'; refreshOverallStatus(); });
 }
 
-let panPending = null, tiltPending = null;
 function publishServo(topic, val){
   if(mqttClient && mqttClient.connected){
-    try{ mqttClient.publish(topic, String(val)); }catch(e){}
+    try{ mqttClient.publish(topic, String(Math.round(val))); warnedNoMqtt = false; }catch(e){}
+  } else if(!warnedNoMqtt){
+    warnedNoMqtt = true;
+    showToast('เซอร์โวยังไม่เชื่อมต่อ MQTT — ตำแหน่งจะไม่ถูกส่ง');
   }
 }
-function throttlePublish(topic, val, pendingRef){
-  // ส่งค่าทันทีตัวแรก แล้ว throttle ที่เหลือทุก 120ms กันสแปม MQTT / servo กระตุก
-  if(pendingRef.timer) return pendingRef.next = val;
-  pendingRef.next = val;
-  publishServo(topic, val);
-  pendingRef.timer = setTimeout(() => {
-    pendingRef.timer = null;
-    if(pendingRef.next !== val) publishServo(topic, pendingRef.next);
+let warnedNoMqtt = false;
+let publishTimer = null, pendingPan = 90, pendingTilt = 90, publishAgain = false;
+function throttlePublishBoth(){
+  if(publishTimer){ publishAgain = true; return; }
+  publishServo(TOPIC_PAN, pendingPan);
+  publishServo(TOPIC_TILT, pendingTilt);
+  publishTimer = setTimeout(() => {
+    publishTimer = null;
+    if(publishAgain){
+      publishAgain = false;
+      publishServo(TOPIC_PAN, pendingPan);
+      publishServo(TOPIC_TILT, pendingTilt);
+    }
   }, 120);
 }
-const panThrottle = {timer:null,next:90}, tiltThrottle = {timer:null,next:90};
 
-panSlider.oninput = () => {
-  panVal.textContent = panSlider.value + '°';
-  throttlePublish(TOPIC_PAN, panSlider.value, panThrottle);
-};
-tiltSlider.oninput = () => {
-  tiltVal.textContent = tiltSlider.value + '°';
-  throttlePublish(TOPIC_TILT, tiltSlider.value, tiltThrottle);
-};
+function setAngles(pan, tilt, publish){
+  panAngle = Math.max(0, Math.min(180, Math.round(pan)));
+  tiltAngle = Math.max(0, Math.min(180, Math.round(tilt)));
+  pendingPan = panAngle; pendingTilt = tiltAngle;
+  updatePositionUI();
+  if(publish) throttlePublishBoth();
+}
+
+centerBtn.onclick = () => { setAngles(90, 90, true); };
+
+/* ===================== ตัวจัดการลากจอยสติ๊ก ===================== */
+function pointFromEvent(e){
+  const rect = joystick.getBoundingClientRect();
+  const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+  let dx = e.clientX - cx, dy = e.clientY - cy;
+  const radius = joystickRadius();
+  const dist = Math.hypot(dx, dy);
+  if(dist > radius){ dx = dx/dist*radius; dy = dy/dist*radius; }
+  return {dx, dy, radius};
+}
+function applyJoystickPoint(dx, dy, radius){
+  knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+  const pan = 90 + (dx/radius)*90;
+  const tilt = 90 - (dy/radius)*90;
+  setAngles(pan, tilt, true);
+}
+joystick.addEventListener('pointerdown', (e) => {
+  dragging = true;
+  joystick.setPointerCapture(e.pointerId);
+  const {dx, dy, radius} = pointFromEvent(e);
+  applyJoystickPoint(dx, dy, radius);
+});
+joystick.addEventListener('pointermove', (e) => {
+  if(!dragging) return;
+  const {dx, dy, radius} = pointFromEvent(e);
+  applyJoystickPoint(dx, dy, radius);
+});
+function endDrag(e){ if(dragging){ dragging = false; try{ joystick.releasePointerCapture(e.pointerId); }catch(err){} } }
+joystick.addEventListener('pointerup', endDrag);
+joystick.addEventListener('pointercancel', endDrag);
 
 /* ===================== เสียง: เล่นเสียงจากกล้อง (PCM16 16kHz mono) ===================== */
 let audioCtx = null;
@@ -434,11 +636,15 @@ function ensureAudioCtx(){
   if(audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
+document.body.addEventListener('pointerdown', () => {
+  if(audioUnlockNeeded.current){ ensureAudioCtx(); audioUnlockNeeded.current = false; }
+}, {once:true});
+
 function playIncomingAudio(arrayBuffer){
   try{
     if(arrayBuffer.byteLength < 2) return;
     const ctx = ensureAudioCtx();
-    const usableLen = arrayBuffer.byteLength - (arrayBuffer.byteLength % 2); // ตัดไบต์เกินคู่ทิ้งกันพัง
+    const usableLen = arrayBuffer.byteLength - (arrayBuffer.byteLength % 2);
     const int16 = new Int16Array(arrayBuffer, 0, usableLen/2);
     const float32 = new Float32Array(int16.length);
     for(let i=0;i<int16.length;i++) float32[i] = int16[i] / 32768;
@@ -448,13 +654,11 @@ function playIncomingAudio(arrayBuffer){
     src.buffer = buf;
     src.connect(ctx.destination);
     const now = ctx.currentTime;
-    if(playHead < now + 0.05) playHead = now + 0.05; // กันเสียงกระตุกถ้า buffer มาช้า
-    if(playHead > now + 1.5) playHead = now + 0.05;  // กันเสียงหน่วงสะสมยาวขึ้นเรื่อยๆถ้าเน็ตกระตุก
+    if(playHead < now + 0.05) playHead = now + 0.05;
+    if(playHead > now + 1.5) playHead = now + 0.05;
     src.start(playHead);
     playHead += buf.duration;
-  }catch(e){
-    // เสียงชิ้นนี้เสีย/เล่นไม่ได้ — ข้ามไปเล่นชิ้นถัดไป ไม่ให้แอพหยุดทำงาน
-  }
+  }catch(e){ /* ข้ามชิ้นเสียงที่เล่นไม่ได้ */ }
 }
 
 /* ===================== เสียง: กดค้างพูด (push-to-talk) ===================== */
@@ -462,18 +666,12 @@ let micStream = null, micCtx = null, micProcessor = null, micSource = null;
 
 async function startTalk(){
   if(talking) return;
-  if(!window.isSecureContext){
-    showToast('ต้องเปิดผ่าน https:// ไมค์ถึงจะใช้ได้');
-    return;
-  }
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-    showToast('เบราว์เซอร์นี้ไม่รองรับการใช้ไมค์');
-    return;
-  }
-  ensureAudioCtx(); audioUnlocked = true; audioUnlockEl.style.display = 'none';
+  if(!window.isSecureContext){ showToast('ต้องเปิดผ่าน https:// ไมค์ถึงจะใช้ได้'); return; }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ showToast('เบราว์เซอร์นี้ไม่รองรับการใช้ไมค์'); return; }
+  ensureAudioCtx(); audioUnlockNeeded.current = false;
   talking = true;
   talkBtn.classList.add('live');
-  talkBtn.textContent = '🎙 กำลังพูด… (ปล่อยเพื่อหยุด)';
+  talkLabel.textContent = 'กำลังพูด…';
   sendCamText('TALK_START');
   try{
     micStream = await navigator.mediaDevices.getUserMedia({audio:{channelCount:1, echoCancellation:true, noiseSuppression:true}});
@@ -487,10 +685,10 @@ async function startTalk(){
         const input = e.inputBuffer.getChannelData(0);
         const down = downsampleTo16k(input, srcRate);
         if(camSocket && camSocket.readyState === WebSocket.OPEN) camSocket.send(down.buffer);
-      }catch(err){ /* ข้ามช่วงเสียงนี้ไปถ้าแปลงข้อมูลพลาด ไม่ให้ทั้งเซสชันพูดหลุด */ }
+      }catch(err){}
     };
     micSource.connect(micProcessor);
-    micProcessor.connect(micCtx.destination); // จำเป็นบางเบราว์เซอร์เพื่อให้ onaudioprocess ทำงาน
+    micProcessor.connect(micCtx.destination);
   }catch(err){
     showToast('เข้าถึงไมค์ไม่สำเร็จ (เช็คว่าอนุญาตสิทธิ์ไมค์ให้เว็บนี้แล้ว)');
     stopTalk();
@@ -500,7 +698,7 @@ function stopTalk(){
   if(!talking) return;
   talking = false;
   talkBtn.classList.remove('live');
-  talkBtn.textContent = '🎙 กดค้างเพื่อพูด';
+  talkLabel.textContent = 'พูด';
   sendCamText('TALK_STOP');
   try{ if(micProcessor){ micProcessor.disconnect(); micProcessor.onaudioprocess = null; } }catch(e){}
   try{ if(micSource) micSource.disconnect(); }catch(e){}
@@ -526,6 +724,7 @@ talkBtn.addEventListener('mouseup', stopTalk);
 talkBtn.addEventListener('mouseleave', () => { if(talking) stopTalk(); });
 
 /* ===================== เริ่มทำงาน ===================== */
+window.addEventListener('load', () => { updatePositionUI(); updateAudioStatusUI(); });
 if(cfg.relayHost) connectCam();
 if(cfg.mqttHost) connectMqtt();
 </script>
