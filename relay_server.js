@@ -6,8 +6,47 @@ const WebSocket = require('ws');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const mqtt = require('mqtt'); // ใหม่ - ใช้ส่งต่อ "สถานะเสียง/สถานะกล้อง" ไปให้จอ OLED บน ESP32 Dev Kit ผ่าน HiveMQ
 
 const DEVICE_TOKEN = process.env.DEVICE_TOKEN || 'ตั้งรหัสลับของกล้องเอง'; // ต้องตรงกับใน esp32cam_camera.ino
+
+// ---------- สะพานเชื่อม MQTT (ใหม่) ----------
+// หน้าที่: ฟังข้อความ "AUDIO_STATUS:0/1" ที่กล้องส่งเข้ามาทาง WebSocket อยู่แล้ว แล้ว publish ต่อขึ้น HiveMQ
+// เพื่อให้บอร์ด ESP32 Dev Kit (esp32_servo_controller.ino) ซึ่งต่อ MQTT อยู่แล้ว เอาไปโชว์บนจอ OLED ได้
+// เลือกทำสะพานนี้ที่ relay server (Render.com) แทนที่จะเพิ่ม MQTT ในบอร์ดกล้องเอง เพราะบอร์ดกล้อง (ESP32-CAM)
+// ใช้ RAM ใกล้เต็มอยู่แล้วจากกล้อง+I2S+WebSocket(TLS) ตัวเดียว การเพิ่มการเชื่อมต่อ TLS อีกเส้นเสี่ยงทำให้ไม่เสถียร
+// ไปตั้งค่า Environment Variables บน Render.com (Dashboard > Environment) ให้ตรงกับใน esp32_servo_controller.ino:
+//   MQTT_HOST, MQTT_USER, MQTT_PASS (และ MQTT_PORT ถ้าไม่ใช่ 8883 ค่าเริ่มต้น)
+const MQTT_HOST = process.env.MQTT_HOST || '';
+const MQTT_PORT = Number(process.env.MQTT_PORT || 8883);
+const MQTT_USER = process.env.MQTT_USER || '';
+const MQTT_PASS = process.env.MQTT_PASS || '';
+const TOPIC_CAM_STATUS = 'securitycam/cam/status'; // online/offline ของบอร์ดกล้อง (retained)
+const TOPIC_CAM_AUDIO  = 'securitycam/cam/audio';  // "1"=ไมค์/ลำโพงพร้อม "0"=มีปัญหา (retained)
+
+let mqttBridge = null;
+function connectMqttBridge() {
+  if (!MQTT_HOST) {
+    console.log('[MQTT bridge] ยังไม่ได้ตั้งค่า MQTT_HOST (Environment Variable) — ข้ามไปก่อน จอ OLED จะไม่เห็นสถานะเสียง');
+    return;
+  }
+  mqttBridge = mqtt.connect(`mqtts://${MQTT_HOST}:${MQTT_PORT}`, {
+    username: MQTT_USER,
+    password: MQTT_PASS,
+    clientId: 'relay-bridge-' + Math.random().toString(16).slice(2),
+    reconnectPeriod: 3000,
+    will: { topic: TOPIC_CAM_STATUS, payload: 'offline', qos: 1, retain: true },
+  });
+  mqttBridge.on('connect', () => console.log('[MQTT bridge] เชื่อม HiveMQ สำเร็จ'));
+  mqttBridge.on('error', (e) => console.log('[MQTT bridge] error: ' + e.message));
+}
+function publishCamStatus(status) { // 'online' | 'offline'
+  if (mqttBridge && mqttBridge.connected) mqttBridge.publish(TOPIC_CAM_STATUS, status, { retain: true });
+}
+function publishCamAudio(ready) { // true | false
+  if (mqttBridge && mqttBridge.connected) mqttBridge.publish(TOPIC_CAM_AUDIO, ready ? '1' : '0', { retain: true });
+}
+connectMqttBridge();
 
 // เก็บ viewer.html ไว้ในไฟล์เดียวกับที่ push ขึ้น GitHub/Render (โฟลเดอร์เดียวกับ relay_server.js)
 // Render ให้ HTTPS มาด้วยในตัว จึงเปิดหน้านี้แล้วขอสิทธิ์ไมค์ (push-to-talk) ได้ทันที ไม่ต้องพึ่งที่โฮสต์อื่น
@@ -52,11 +91,18 @@ wss.on('connection', (ws, req) => {
           viewers.delete(ws); // เดิมถูกนับเป็น viewer ชั่วคราวตอนต่อเข้ามา ต้องเอาออกตอนกลายเป็นกล้อง
           camSocket = ws;
           console.log('กล้องเชื่อมต่อและยืนยันตัวตนแล้ว');
+          publishCamStatus('online');
         }
         return;
       }
 
       if (ws.isCamera) {
+        // ข้อความสถานะเสียงจากกล้อง ("AUDIO_STATUS:0/1") -> ส่งต่อขึ้น MQTT ให้จอ OLED ด้วย
+        // (นอกเหนือจากที่ส่งต่อให้ viewer.html ตามปกติในลูปด้านล่าง)
+        if (!isBinary) {
+          const text = data.toString();
+          if (text.startsWith('AUDIO_STATUS:')) publishCamAudio(text.split(':')[1] === '1');
+        }
         // ข้อมูลจากกล้อง (ภาพ/เสียง) -> ส่งต่อให้ทุกมือถือที่ดูอยู่
         for (const viewer of viewers) {
           if (viewer.readyState === WebSocket.OPEN) {
@@ -76,7 +122,7 @@ wss.on('connection', (ws, req) => {
   });
 
   ws.on('close', () => {
-    if (ws.isCamera) { camSocket = null; console.log('กล้องตัดการเชื่อมต่อ'); }
+    if (ws.isCamera) { camSocket = null; console.log('กล้องตัดการเชื่อมต่อ'); publishCamStatus('offline'); }
     else viewers.delete(ws);
   });
 
