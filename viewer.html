@@ -88,20 +88,20 @@
   .bar-track .notch{position:absolute;top:50%;width:9px;height:9px;border-radius:50%;background:var(--navy);
     transform:translate(-50%,-50%);transition:left .12s;}
 
-  /* ---------- joystick ---------- */
-  .joystick-wrap{display:flex;justify-content:center;padding:6px 0 4px;}
-  .joystick{width:220px;height:220px;border-radius:50%;background:radial-gradient(circle at 50% 45%,#f8f9fb,#eef0f3);
-    border:1px solid var(--border);position:relative;touch-action:none;cursor:grab;}
-  .joystick::before,.joystick::after{content:'';position:absolute;background:#e2e5ea;}
-  .joystick::before{left:14px;right:14px;top:50%;height:1px;}
-  .joystick::after{top:14px;bottom:14px;left:50%;width:1px;}
-  .joystick .ring{position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px;
-    border-radius:50%;border:1px solid #e2e5ea;}
-  .knob{position:absolute;left:50%;top:50%;width:64px;height:64px;border-radius:50%;
-    background:radial-gradient(circle at 35% 30%,#2c4c78,var(--navy) 70%);
-    box-shadow:0 6px 16px rgba(29,53,87,.35);display:flex;align-items:center;justify-content:center;}
-  .knob::after{content:'';width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.85);}
-  .joystick-hint{text-align:center;font-size:12px;color:var(--ink-dim);margin-top:10px;}
+  /* ---------- d-pad (ปุ่มกดทิศทาง แทนที่จอยสติ๊กแบบลากเดิม) ---------- */
+  .dpad-wrap{display:flex;justify-content:center;padding:6px 0 4px;}
+  .dpad{width:220px;height:220px;display:grid;grid-template-columns:64px 64px 64px;
+    grid-template-rows:64px 64px 64px;gap:14px;place-content:center;}
+  .dpad-btn{border:1px solid var(--border);border-radius:16px;background:#f8f9fb;
+    display:flex;align-items:center;justify-content:center;color:var(--navy);cursor:pointer;
+    touch-action:none;-webkit-user-select:none;user-select:none;transition:background .1s,transform .1s;}
+  .dpad-btn svg{width:26px;height:26px;pointer-events:none;}
+  .dpad-btn.pressed{background:var(--navy);color:#fff;transform:scale(.94);}
+  .dpad-up{grid-column:2;grid-row:1;}
+  .dpad-left{grid-column:1;grid-row:2;}
+  .dpad-right{grid-column:3;grid-row:2;}
+  .dpad-down{grid-column:2;grid-row:3;}
+  .control-hint{text-align:center;font-size:12px;color:var(--ink-dim);margin-top:10px;}
 
   /* ---------- action row ---------- */
   .actions{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;}
@@ -196,14 +196,24 @@
 
   <div class="card">
     <p class="card-title">ควบคุมทิศทาง</p>
-    <div class="joystick-wrap">
-      <div class="joystick" id="joystick">
-        <div class="ring"></div>
-        <div class="knob" id="knob"></div>
+    <div class="dpad-wrap">
+      <div class="dpad" id="dpad">
+        <button type="button" class="dpad-btn dpad-up" id="btnUp" aria-label="เงยกล้องขึ้น">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4l7 7M12 4l-7 7M12 4v16"/></svg>
+        </button>
+        <button type="button" class="dpad-btn dpad-left" id="btnLeft" aria-label="หันกล้องซ้าย">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12l7-7M4 12l7 7M4 12h16"/></svg>
+        </button>
+        <button type="button" class="dpad-btn dpad-right" id="btnRight" aria-label="หันกล้องขวา">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12l-7-7M20 12l-7 7M20 12H4"/></svg>
+        </button>
+        <button type="button" class="dpad-btn dpad-down" id="btnDown" aria-label="ก้มกล้องลง">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20l7-7M12 20l-7-7M12 20V4"/></svg>
+        </button>
       </div>
     </div>
-    <div class="joystick-hint">ลากวงกลมเพื่อหมุนกล้อง</div>
-    <div class="joystick-hint" id="servoStatusLine" style="margin-top:2px;">เซอร์โว: กำลังตรวจสอบสถานะ…</div>
+    <div class="control-hint">กดค้างปุ่มลูกศรเพื่อหมุนกล้องไปทิศนั้นต่อเนื่อง</div>
+    <div class="control-hint" id="servoStatusLine" style="margin-top:2px;">เซอร์โว: กำลังตรวจสอบสถานะ…</div>
   </div>
 
   <div class="actions">
@@ -479,13 +489,6 @@ muteBtn.onclick = () => {
     : '<path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7"/><path d="M18.5 6a9 9 0 010 12"/>';
 };
 
-/* ===================== จอยสติ๊กควบคุมทิศทาง (ต้องประกาศก่อน updatePositionUI เพราะมันอ้างถึงตัวแปรพวกนี้) ===================== */
-const joystick = $('joystick'), knob = $('knob');
-let dragging = false;
-function joystickRadius(){
-  return joystick.clientWidth / 2 - 34; // เผื่อระยะให้ knob (64px) ไม่ล้นขอบวงกลม
-}
-
 /* ===================== ตำแหน่งกล้อง: แปลงองศาเป็นคำอ่านง่าย ไม่โชว์ตัวเลข ===================== */
 let panAngle = 90, tiltAngle = 90;
 
@@ -514,13 +517,6 @@ function updatePositionUI(){
   $('miniDot').style.top  = py + '%';
   $('panNotch').style.left  = px + '%';
   $('tiltNotch').style.left = (tiltAngle/180*100) + '%';
-
-  if(!dragging){
-    const radius = joystickRadius();
-    const dx = (panAngle - 90) / 90 * radius;
-    const dy = (90 - tiltAngle) / 90 * radius;
-    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-  }
 }
 updatePositionUI();
 
@@ -597,36 +593,32 @@ function setAngles(pan, tilt, publish){
 
 centerBtn.onclick = () => { setAngles(90, 90, true); };
 
-/* ===================== ตัวจัดการลากจอยสติ๊ก ===================== */
-function pointFromEvent(e){
-  const rect = joystick.getBoundingClientRect();
-  const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
-  let dx = e.clientX - cx, dy = e.clientY - cy;
-  const radius = joystickRadius();
-  const dist = Math.hypot(dx, dy);
-  if(dist > radius){ dx = dx/dist*radius; dy = dy/dist*radius; }
-  return {dx, dy, radius};
+/* ===================== ตัวจัดการปุ่มกดทิศทาง (D-pad) — กดค้างเพื่อขยับกล้องต่อเนื่อง ===================== */
+const DPAD_STEP_DEG    = 4;  // องศาต่อครั้งที่ขยับขณะกดค้างปุ่ม
+const DPAD_INTERVAL_MS = 60; // ความถี่ในการขยับขณะกดค้าง (ยังอยู่ในช่วงที่ throttlePublishBoth ด้านบนรองรับได้)
+let dpadTimer = null, dpadBtnEl = null;
+function startDpad(btn, dPan, dTilt){
+  stopDpad();
+  dpadBtnEl = btn;
+  btn.classList.add('pressed');
+  const tick = () => setAngles(panAngle + dPan, tiltAngle + dTilt, true);
+  tick(); // ขยับทันที 1 ครั้งตอนกดปุ่ม ไม่ต้องรอรอบ interval แรก
+  dpadTimer = setInterval(tick, DPAD_INTERVAL_MS);
 }
-function applyJoystickPoint(dx, dy, radius){
-  knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-  const pan = 90 + (dx/radius)*90;
-  const tilt = 90 - (dy/radius)*90;
-  setAngles(pan, tilt, true);
+function stopDpad(){
+  if(dpadTimer){ clearInterval(dpadTimer); dpadTimer = null; }
+  if(dpadBtnEl){ dpadBtnEl.classList.remove('pressed'); dpadBtnEl = null; }
 }
-joystick.addEventListener('pointerdown', (e) => {
-  dragging = true;
-  joystick.setPointerCapture(e.pointerId);
-  const {dx, dy, radius} = pointFromEvent(e);
-  applyJoystickPoint(dx, dy, radius);
-});
-joystick.addEventListener('pointermove', (e) => {
-  if(!dragging) return;
-  const {dx, dy, radius} = pointFromEvent(e);
-  applyJoystickPoint(dx, dy, radius);
-});
-function endDrag(e){ if(dragging){ dragging = false; try{ joystick.releasePointerCapture(e.pointerId); }catch(err){} } }
-joystick.addEventListener('pointerup', endDrag);
-joystick.addEventListener('pointercancel', endDrag);
+function bindDpadButton(btn, dPan, dTilt){
+  btn.addEventListener('pointerdown', e => { e.preventDefault(); startDpad(btn, dPan, dTilt); });
+  btn.addEventListener('pointerup', stopDpad);
+  btn.addEventListener('pointerleave', stopDpad);
+  btn.addEventListener('pointercancel', stopDpad);
+}
+bindDpadButton($('btnUp'),    0,  DPAD_STEP_DEG);
+bindDpadButton($('btnDown'),  0, -DPAD_STEP_DEG);
+bindDpadButton($('btnLeft'), -DPAD_STEP_DEG, 0);
+bindDpadButton($('btnRight'), DPAD_STEP_DEG, 0);
 
 /* ===================== เสียง: เล่นเสียงจากกล้อง (PCM16 16kHz mono) ===================== */
 let audioCtx = null;
