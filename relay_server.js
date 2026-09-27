@@ -58,16 +58,31 @@ let camAudioReady = null; // null=ยังไม่เคยได้ยิน�
 let camErrCode = null;
 
 if (process.env.MQTT_HOST && process.env.MQTT_USER && process.env.MQTT_PASS) {
-  const mqttPort = process.env.MQTT_PORT || '8883';
-  mqttBridge = mqtt.connect('mqtts://' + process.env.MQTT_HOST + ':' + mqttPort, {
-    username: process.env.MQTT_USER,
-    password: process.env.MQTT_PASS,
-    clientId: 'relay-bridge-' + Math.random().toString(16).slice(2),
-    reconnectPeriod: 3000,
-    connectTimeout: 8000,
-  });
-  mqttBridge.on('connect', () => console.log('[MQTT bridge] เชื่อมต่อ HiveMQ สำเร็จ'));
-  mqttBridge.on('error', (e) => console.log('[MQTT bridge] error: ' + e.message));
+  // ตรวจพอร์ตให้เป็นตัวเลข 1-65535 ก่อนใช้งานจริง — ถ้าตั้ง MQTT_PORT ผิด (เช่น เผลอวางรหัสผ่าน/token
+  // ใส่มาแทนพอร์ต) mqtt.connect() จะโยน RangeError ออกมา "ทันทีตอนเริ่มสคริปต์" (ไม่ใช่ event 'error'
+  // ทีหลัง) ซึ่งเกิดก่อนที่ process.on('uncaughtException') ท้ายไฟล์จะถูกลงทะเบียนเสร็จด้วยซ้ำ —
+  // ผลคือทั้ง service ล่มทันที กระทบวิดีโอ/เสียง/ควบคุมเซอร์โวไปด้วยทั้งที่ไม่เกี่ยวกัน
+  // เช็ค+ห่อ try/catch ตรงนี้กันไว้ ต่อให้ตั้งค่าอะไรผิดพลาด service หลักจะไม่ล่มตามอีกต่อไป
+  const mqttPortRaw = process.env.MQTT_PORT || '8883';
+  const mqttPort = parseInt(mqttPortRaw, 10);
+  if (!Number.isInteger(mqttPort) || mqttPort <= 0 || mqttPort > 65535) {
+    console.log('[MQTT bridge] MQTT_PORT ค่าไม่ถูกต้อง: "' + mqttPortRaw + '" (ต้องเป็นตัวเลข 1-65535 ปกติคือ 8883) — เช็คว่าเผลอใส่ค่าอื่น (เช่นรหัสผ่าน) ผิดช่องหรือเปล่า ข้ามฟีเจอร์นี้ไปก่อน วิดีโอ/เสียง/ควบคุมยังทำงานปกติ');
+  } else {
+    try {
+      mqttBridge = mqtt.connect('mqtts://' + process.env.MQTT_HOST + ':' + mqttPort, {
+        username: process.env.MQTT_USER,
+        password: process.env.MQTT_PASS,
+        clientId: 'relay-bridge-' + Math.random().toString(16).slice(2),
+        reconnectPeriod: 3000,
+        connectTimeout: 8000,
+      });
+      mqttBridge.on('connect', () => console.log('[MQTT bridge] เชื่อมต่อ HiveMQ สำเร็จ'));
+      mqttBridge.on('error', (e) => console.log('[MQTT bridge] error: ' + e.message));
+    } catch (e) {
+      console.log('[MQTT bridge] ตั้งค่าต่อ MQTT ไม่สำเร็จ: ' + e.message + ' — ข้ามฟีเจอร์นี้ไปก่อน วิดีโอ/เสียง/ควบคุมยังทำงานปกติ');
+      mqttBridge = null;
+    }
+  }
 } else {
   console.log('[MQTT bridge] ยังไม่ได้ตั้ง MQTT_HOST/MQTT_USER/MQTT_PASS — ข้ามฟีเจอร์นี้ (วิดีโอ/เสียง/ควบคุมยังใช้งานได้ปกติ)');
 }
