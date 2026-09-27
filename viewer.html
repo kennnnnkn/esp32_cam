@@ -88,19 +88,21 @@
   .bar-track .notch{position:absolute;top:50%;width:9px;height:9px;border-radius:50%;background:var(--navy);
     transform:translate(-50%,-50%);transition:left .12s;}
 
-  /* ---------- d-pad (ปุ่มกดทิศทาง แทนที่จอยสติ๊กแบบลากเดิม) ---------- */
+  /* ---------- d-pad (ปุ่มกดทิศทาง แทนจอยสติ๊กเดิม) ---------- */
   .dpad-wrap{display:flex;justify-content:center;padding:6px 0 4px;}
-  .dpad{width:220px;height:220px;display:grid;grid-template-columns:64px 64px 64px;
-    grid-template-rows:64px 64px 64px;gap:14px;place-content:center;}
-  .dpad-btn{border:1px solid var(--border);border-radius:16px;background:#f8f9fb;
-    display:flex;align-items:center;justify-content:center;color:var(--navy);cursor:pointer;
-    touch-action:none;-webkit-user-select:none;user-select:none;transition:background .1s,transform .1s;}
-  .dpad-btn svg{width:26px;height:26px;pointer-events:none;}
-  .dpad-btn.pressed{background:var(--navy);color:#fff;transform:scale(.94);}
+  .dpad{display:grid;grid-template-columns:64px 64px 64px;grid-template-rows:64px 64px 64px;gap:10px;}
+  .dpad-btn{grid-column:2;grid-row:2;border:1px solid var(--border);background:var(--card);border-radius:16px;
+    box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;color:var(--ink);
+    cursor:pointer;-webkit-user-select:none;user-select:none;touch-action:none;padding:0;}
+  .dpad-btn svg{width:24px;height:24px;pointer-events:none;}
+  .dpad-btn.pressed{background:var(--navy);color:#fff;transform:scale(.96);}
   .dpad-up{grid-column:2;grid-row:1;}
   .dpad-left{grid-column:1;grid-row:2;}
   .dpad-right{grid-column:3;grid-row:2;}
   .dpad-down{grid-column:2;grid-row:3;}
+  .dpad-center-deco{grid-column:2;grid-row:2;border-radius:50%;background:var(--navy-soft);
+    display:flex;align-items:center;justify-content:center;}
+  .dpad-center-deco::after{content:'';width:10px;height:10px;border-radius:50%;background:var(--navy);}
   .control-hint{text-align:center;font-size:12px;color:var(--ink-dim);margin-top:10px;}
 
   /* ---------- action row ---------- */
@@ -197,22 +199,23 @@
   <div class="card">
     <p class="card-title">ควบคุมทิศทาง</p>
     <div class="dpad-wrap">
-      <div class="dpad" id="dpad">
-        <button type="button" class="dpad-btn dpad-up" id="btnUp" aria-label="เงยกล้องขึ้น">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4l7 7M12 4l-7 7M12 4v16"/></svg>
+      <div class="dpad">
+        <button type="button" class="dpad-btn dpad-up" id="btnUp" aria-label="เงยขึ้น">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>
         </button>
-        <button type="button" class="dpad-btn dpad-left" id="btnLeft" aria-label="หันกล้องซ้าย">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12l7-7M4 12l7 7M4 12h16"/></svg>
+        <button type="button" class="dpad-btn dpad-left" id="btnLeft" aria-label="หันซ้าย">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
         </button>
-        <button type="button" class="dpad-btn dpad-right" id="btnRight" aria-label="หันกล้องขวา">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12l-7-7M20 12l-7 7M20 12H4"/></svg>
+        <div class="dpad-center-deco"></div>
+        <button type="button" class="dpad-btn dpad-right" id="btnRight" aria-label="หันขวา">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
         </button>
-        <button type="button" class="dpad-btn dpad-down" id="btnDown" aria-label="ก้มกล้องลง">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20l7-7M12 20l-7-7M12 20V4"/></svg>
+        <button type="button" class="dpad-btn dpad-down" id="btnDown" aria-label="ก้มลง">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
         </button>
       </div>
     </div>
-    <div class="control-hint">กดค้างปุ่มลูกศรเพื่อหมุนกล้องไปทิศนั้นต่อเนื่อง</div>
+    <div class="control-hint">กดค้างปุ่มลูกศรเพื่อหมุนกล้องไปทางนั้นต่อเนื่อง ปล่อยเพื่อหยุด</div>
     <div class="control-hint" id="servoStatusLine" style="margin-top:2px;">เซอร์โว: กำลังตรวจสอบสถานะ…</div>
   </div>
 
@@ -312,14 +315,14 @@ function applyLabel(){
 applyLabel();
 
 function saveSettings(){
-  cfg.label     = $('cfgLabel').value.trim();
+  cfg.label = $('cfgLabel').value.trim();
   cfg.relayHost = cleanHost($('cfgRelayHost').value);
-  cfg.token     = $('cfgToken').value.trim();
-  cfg.mqttHost  = cleanHost($('cfgMqttHost').value);
-  cfg.mqttUser  = $('cfgMqttUser').value.trim();
-  cfg.mqttPass  = $('cfgMqttPass').value.trim();
-  cfg.mqttPort  = $('cfgMqttPort').value.trim() || '8884';
-  cfg.mqttPath  = ($('cfgMqttPath').value.trim() || '/mqtt').replace(/^([^/])/, '/$1');
+  cfg.token = $('cfgToken').value.trim();
+  cfg.mqttHost = cleanHost($('cfgMqttHost').value);
+  cfg.mqttUser = $('cfgMqttUser').value.trim();
+  cfg.mqttPass = $('cfgMqttPass').value.trim();
+  cfg.mqttPort = $('cfgMqttPort').value.trim() || '8884';
+  cfg.mqttPath = ($('cfgMqttPath').value.trim() || '/mqtt').replace(/^([^/])/, '/$1');
   if(!cfg.relayHost || !cfg.mqttHost){
     showToast('กรอก Render host และ HiveMQ host ก่อนบันทึก');
     return;
@@ -344,10 +347,10 @@ if(!cfg.relayHost || !cfg.mqttHost){
 }
 
 /* ===================== สถานะรวม (แสดงเป็นข้อความอ่านง่าย ไม่มีศัพท์เทคนิค) ===================== */
-let camState = 'connecting';   // connecting | open | noFrame | streaming | closed
+let camState = 'connecting';  // connecting | open | noFrame | streaming | closed
 let mqttState = 'connecting';  // connecting | open | closed
-let servoDeviceState = 'unknown'; // unknown | online | offline (มาจาก topic สถานะจริงของบอร์ดเซอร์โว ไม่ใช่แค่ browser ต่อ broker ติด)
-let audioHwReady = null; // null=ยังไม่รู้, true=กล้องติดตั้ง I2S สำเร็จ, false=ไม่สำเร็จ (มาจากข้อความ AUDIO_STATUS ที่กล้องส่งมาตอนต่อติด)
+let servoDeviceState = 'unknown';  // unknown | online | offline (มาจาก topic สถานะจริงของบอร์ดเซอร์โว ไม่ใช่แค่ browser ต่อ broker ติด)
+let audioHwReady = null;  // null=ยังไม่รู้, true=กล้องติดตั้ง I2S สำเร็จ, false=ไม่สำเร็จ (มาจากข้อความ AUDIO_STATUS ที่กล้องส่งมาตอนต่อติด)
 
 function updateAudioStatusUI(){
   const el = $('audioStatusNote');
@@ -544,7 +547,7 @@ function connectMqtt(){
   }
   mqttClient.on('connect', () => {
     mqttState = 'open';
-    servoDeviceState = 'unknown'; // รอฟังสถานะจริงจาก topic retained อีกครั้ง
+    servoDeviceState = 'unknown';  // รอฟังสถานะจริงจาก topic retained อีกครั้ง
     mqttClient.subscribe(TOPIC_STATUS);
     refreshOverallStatus();
   });
@@ -593,32 +596,42 @@ function setAngles(pan, tilt, publish){
 
 centerBtn.onclick = () => { setAngles(90, 90, true); };
 
-/* ===================== ตัวจัดการปุ่มกดทิศทาง (D-pad) — กดค้างเพื่อขยับกล้องต่อเนื่อง ===================== */
-const DPAD_STEP_DEG    = 4;  // องศาต่อครั้งที่ขยับขณะกดค้างปุ่ม
-const DPAD_INTERVAL_MS = 60; // ความถี่ในการขยับขณะกดค้าง (ยังอยู่ในช่วงที่ throttlePublishBoth ด้านบนรองรับได้)
-let dpadTimer = null, dpadBtnEl = null;
-function startDpad(btn, dPan, dTilt){
-  stopDpad();
-  dpadBtnEl = btn;
-  btn.classList.add('pressed');
-  const tick = () => setAngles(panAngle + dPan, tiltAngle + dTilt, true);
-  tick(); // ขยับทันที 1 ครั้งตอนกดปุ่ม ไม่ต้องรอรอบ interval แรก
-  dpadTimer = setInterval(tick, DPAD_INTERVAL_MS);
+/* ===================== ปุ่มกดทิศทาง (แทนจอยสติ๊กเดิม) ===================== */
+// กดค้าง = ขยับต่อเนื่องทีละ NUDGE_STEP องศา ทุก NUDGE_INTERVAL มิลลิวินาที จนกว่าจะปล่อยนิ้ว/เมาส์
+// (ให้ความรู้สึกใกล้เคียงจอยสติ๊กเดิม แต่กดง่ายกว่าบนจอมือถือ และเผื่อพื้นที่กดพลาดน้อยกว่าการลากวงกลม)
+const NUDGE_STEP = 6;
+const NUDGE_INTERVAL = 130;
+let nudgeTimer = null;
+let nudgeBtnEl = null;
+
+function nudge(dPan, dTilt){
+  setAngles(panAngle + dPan, tiltAngle + dTilt, true);
 }
-function stopDpad(){
-  if(dpadTimer){ clearInterval(dpadTimer); dpadTimer = null; }
-  if(dpadBtnEl){ dpadBtnEl.classList.remove('pressed'); dpadBtnEl = null; }
+function stopNudge(){
+  if(nudgeTimer){ clearInterval(nudgeTimer); nudgeTimer = null; }
+  if(nudgeBtnEl){ nudgeBtnEl.classList.remove('pressed'); nudgeBtnEl = null; }
 }
-function bindDpadButton(btn, dPan, dTilt){
-  btn.addEventListener('pointerdown', e => { e.preventDefault(); startDpad(btn, dPan, dTilt); });
-  btn.addEventListener('pointerup', stopDpad);
-  btn.addEventListener('pointerleave', stopDpad);
-  btn.addEventListener('pointercancel', stopDpad);
+function startNudge(el, dPan, dTilt){
+  stopNudge();
+  nudgeBtnEl = el;
+  el.classList.add('pressed');
+  nudge(dPan, dTilt);  // ขยับทันที 1 ก้าวก่อน ไม่ต้องรอรอบ interval แรก
+  nudgeTimer = setInterval(() => nudge(dPan, dTilt), NUDGE_INTERVAL);
 }
-bindDpadButton($('btnUp'),    0,  DPAD_STEP_DEG);
-bindDpadButton($('btnDown'),  0, -DPAD_STEP_DEG);
-bindDpadButton($('btnLeft'), -DPAD_STEP_DEG, 0);
-bindDpadButton($('btnRight'), DPAD_STEP_DEG, 0);
+function bindDpadBtn(el, dPan, dTilt){
+  el.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    try{ el.setPointerCapture(e.pointerId); }catch(err){}
+    startNudge(el, dPan, dTilt);
+  });
+  el.addEventListener('pointerup', stopNudge);
+  el.addEventListener('pointercancel', stopNudge);
+  el.addEventListener('pointerleave', stopNudge);
+}
+bindDpadBtn($('btnUp'),    0,  NUDGE_STEP);   // เงยขึ้น = tilt เพิ่ม
+bindDpadBtn($('btnDown'),  0, -NUDGE_STEP);   // ก้มลง  = tilt ลด
+bindDpadBtn($('btnLeft'), -NUDGE_STEP, 0);    // หันซ้าย = pan ลด
+bindDpadBtn($('btnRight'), NUDGE_STEP, 0);    // หันขวา  = pan เพิ่ม
 
 /* ===================== เสียง: เล่นเสียงจากกล้อง (PCM16 16kHz mono) ===================== */
 let audioCtx = null;
@@ -654,23 +667,31 @@ function playIncomingAudio(arrayBuffer){
 }
 
 /* ===================== เสียง: กดค้างพูด (push-to-talk) ===================== */
-let micStream = null, micCtx = null, micProcessor = null, micSource = null;
+// แก้บั๊ก "กดพูดแล้วไม่มีเสียงออกลำโพงกล้องเลย": เดิมโค้ดสร้าง AudioContext ตัวที่สอง (micCtx)
+// แยกจากตัวที่ใช้เล่นเสียงเข้า (audioCtx) และไม่เคย resume() มันเลย — เบราว์เซอร์บางตัว
+// (โดยเฉพาะ iOS Safari) จะสร้าง AudioContext ตัวใหม่มาในสถานะ suspended แม้เรียกในอีเวนต์
+// ที่ผู้ใช้กดจริง (user gesture) ก็ตาม ถ้าไม่ resume() ให้เสร็จก่อน onaudioprocess จะไม่ถูก
+// เรียกเลยสักครั้ง = ไม่มีข้อมูลเสียงถูกส่งออกจากเบราว์เซอร์เลย ฝั่งกล้องเลยไม่มีอะไรให้เล่น
+// ทางแก้: ใช้ AudioContext ตัวเดียวกัน (audioCtx) ทั้งเล่นเข้า-อัดออก แล้ว resume() แบบ await
+// ก่อนต่อ ScriptProcessor ทุกครั้งที่กดพูด
+let micStream = null, micProcessor = null, micSource = null;
 
 async function startTalk(){
   if(talking) return;
   if(!window.isSecureContext){ showToast('ต้องเปิดผ่าน https:// ไมค์ถึงจะใช้ได้'); return; }
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ showToast('เบราว์เซอร์นี้ไม่รองรับการใช้ไมค์'); return; }
-  ensureAudioCtx(); audioUnlockNeeded.current = false;
+  const ctx = ensureAudioCtx();
+  audioUnlockNeeded.current = false;
   talking = true;
   talkBtn.classList.add('live');
   talkLabel.textContent = 'กำลังพูด…';
   sendCamText('TALK_START');
   try{
+    if(ctx.state === 'suspended') await ctx.resume();  // สำคัญ: ต้อง resume ให้เสร็จก่อน ไม่งั้น onaudioprocess จะไม่ทำงานเลยบนบางเบราว์เซอร์
     micStream = await navigator.mediaDevices.getUserMedia({audio:{channelCount:1, echoCancellation:true, noiseSuppression:true}});
-    micCtx = new (window.AudioContext || window.webkitAudioContext)();
-    micSource = micCtx.createMediaStreamSource(micStream);
-    micProcessor = micCtx.createScriptProcessor(2048, 1, 1);
-    const srcRate = micCtx.sampleRate;
+    micSource = ctx.createMediaStreamSource(micStream);
+    micProcessor = ctx.createScriptProcessor(2048, 1, 1);
+    const srcRate = ctx.sampleRate;
     micProcessor.onaudioprocess = (e) => {
       if(!talking) return;
       try{
@@ -680,7 +701,7 @@ async function startTalk(){
       }catch(err){}
     };
     micSource.connect(micProcessor);
-    micProcessor.connect(micCtx.destination);
+    micProcessor.connect(ctx.destination);
   }catch(err){
     showToast('เข้าถึงไมค์ไม่สำเร็จ (เช็คว่าอนุญาตสิทธิ์ไมค์ให้เว็บนี้แล้ว)');
     stopTalk();
@@ -695,7 +716,7 @@ function stopTalk(){
   try{ if(micProcessor){ micProcessor.disconnect(); micProcessor.onaudioprocess = null; } }catch(e){}
   try{ if(micSource) micSource.disconnect(); }catch(e){}
   try{ if(micStream) micStream.getTracks().forEach(t=>t.stop()); }catch(e){}
-  try{ if(micCtx) micCtx.close(); }catch(e){}
+  micProcessor = null; micSource = null; micStream = null;
 }
 function downsampleTo16k(float32, srcRate){
   const ratio = srcRate / 16000;
